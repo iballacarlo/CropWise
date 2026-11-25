@@ -24,17 +24,20 @@ describe('TypeORM database options', () => {
     expect(options.migrations).toHaveLength(1);
   });
 
-  it('uses compiled migration paths for production', () => {
+  it('uses compiled entity and migration paths for the Nest runtime', () => {
     const oldEnvironment = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
+    process.env.NODE_ENV = 'development';
     try {
-      const options = createDatabaseOptions({
-        DB_HOST: '127.0.0.1',
-        DB_PORT: 3306,
-        DB_USERNAME: 'cropwise_user',
-        DB_PASSWORD: 'local-only',
-        DB_DATABASE: 'cropwise_db',
-      });
+      const options = createDatabaseOptions(
+        {
+          DB_HOST: '127.0.0.1',
+          DB_PORT: 3306,
+          DB_USERNAME: 'cropwise_user',
+          DB_PASSWORD: 'local-only',
+          DB_DATABASE: 'cropwise_db',
+        },
+        true,
+      );
 
       expect(options.entities).toEqual([expect.stringContaining('dist')]);
       expect(options.migrations).toEqual([expect.stringContaining('dist')]);

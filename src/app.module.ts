@@ -14,13 +14,16 @@ const databaseModules =
         TypeOrmModule.forRootAsync({
           inject: [ConfigService],
           useFactory: (config: ConfigService) => ({
-            ...createDatabaseOptions({
-              DB_HOST: config.getOrThrow<string>('DB_HOST'),
-              DB_PORT: config.getOrThrow<number>('DB_PORT'),
-              DB_USERNAME: config.getOrThrow<string>('DB_USERNAME'),
-              DB_PASSWORD: config.getOrThrow<string>('DB_PASSWORD'),
-              DB_DATABASE: config.getOrThrow<'cropwise_db'>('DB_DATABASE'),
-            }),
+            ...createDatabaseOptions(
+              {
+                DB_HOST: config.getOrThrow<string>('DB_HOST'),
+                DB_PORT: config.getOrThrow<number>('DB_PORT'),
+                DB_USERNAME: config.getOrThrow<string>('DB_USERNAME'),
+                DB_PASSWORD: config.getOrThrow<string>('DB_PASSWORD'),
+                DB_DATABASE: config.getOrThrow<'cropwise_db'>('DB_DATABASE'),
+              },
+              true,
+            ),
             retryAttempts: 1,
             retryDelay: 1000,
           }),

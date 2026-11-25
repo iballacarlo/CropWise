@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 3 entities and initial migration implemented; live MySQL connection and migration application not yet verified.** TypeORM is configured for the dedicated `cropwise_db` database. Authentication and business CRUD will be added in later approved phases.
+Current status: **Phase 3 entities and initial migration implemented and verified against local MySQL.** The initial migration created the six required tables in `cropwise_db`; authentication and business CRUD will be added in later approved phases.
 
 ## Local setup
 
@@ -22,7 +22,7 @@ npm.cmd run db:migration:run
 npm.cmd run start:dev
 ```
 
-`npm run db:create` issues only `CREATE DATABASE IF NOT EXISTS cropwise_db` with `utf8mb4`; it does not modify other databases. `npm run db:check` performs a read-only `SELECT 1` and confirms the selected database. `DB_DATABASE` is restricted to `cropwise_db` so the application cannot accidentally target another database. No live connection check has passed until MySQL is running and these commands succeed with your local credentials.
+`npm run db:create` issues only `CREATE DATABASE IF NOT EXISTS cropwise_db` with `utf8mb4`; it does not modify other databases. `npm run db:check` performs a read-only `SELECT 1` and confirms the selected database. `DB_DATABASE` is restricted to `cropwise_db` so the application cannot accidentally target another database.
 
 The existing starter endpoint is:
 
@@ -110,10 +110,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passes build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. Entity metadata and migration definitions are exercised without a MySQL connection. The live DB check and applying the migration remain pending because XAMPP MySQL is unavailable. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passes build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
-The six entities, their relationships and the initial migration are implemented. No `.env` exists in this checkout and XAMPP MySQL was not listening on port `3306` during implementation, so `cropwise_db` has not been created and the migration has not been applied. Add your local credentials to `.env`, start XAMPP MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
+The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
 All later features and final project deliverables remain pending their respective phase approvals. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), and [CORS](https://docs.nestjs.com/security/cors) documentation.

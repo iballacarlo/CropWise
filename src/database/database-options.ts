@@ -11,11 +11,11 @@ export interface DatabaseConfig {
 
 export function createDatabaseOptions(
   config: DatabaseConfig,
+  useCompiledFiles = process.env.NODE_ENV === 'production',
 ): DataSourceOptions {
-  const databaseDirectory =
-    process.env.NODE_ENV === 'production'
-      ? join(process.cwd(), 'dist', 'database')
-      : join(process.cwd(), 'src', 'database');
+  const databaseDirectory = useCompiledFiles
+    ? join(process.cwd(), 'dist', 'database')
+    : join(process.cwd(), 'src', 'database');
 
   return {
     type: 'mysql',
