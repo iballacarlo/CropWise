@@ -85,7 +85,7 @@ describe('Users and crops routes (e2e)', () => {
     update: jest.fn(),
     remove: jest.fn(),
   };
-  const tokens = { admin: '', user: '' };
+  const tokens = { admin: '', user: '', expired: '' };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -134,6 +134,15 @@ describe('Users and crops routes (e2e)', () => {
       email: 'user@example.com',
       role: UserRole.User,
     });
+    tokens.expired = jwt.sign(
+      {
+        userId: 7,
+        fullName: 'Test User',
+        email: 'user@example.com',
+        role: UserRole.User,
+      },
+      { expiresIn: -1 },
+    );
     app.useLogger(false);
     configureApp(app);
     await app.init();
@@ -145,6 +154,18 @@ describe('Users and crops routes (e2e)', () => {
 
   it('rejects user management without authentication', async () => {
     await request(app.getHttpServer()).get('/api/v1/users').expect(401);
+  });
+
+  it('rejects malformed and expired JWTs before reaching a controller', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/users')
+      .set('Authorization', 'Bearer malformed-token')
+      .expect(401);
+    await request(app.getHttpServer())
+      .get('/api/v1/users')
+      .set('Authorization', `Bearer ${tokens.expired}`)
+      .expect(401);
+    expect(usersService.findAll).not.toHaveBeenCalled();
   });
 
   it('restricts user management to the Admin role', async () => {
