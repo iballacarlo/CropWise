@@ -1,222 +1,45 @@
 # CropWise Backend
 
-CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
+CropWise is a backend API for managing crops, farm activities, harvests, users, and farm inventory. It supports JWT authentication and role-based access for Admin and User accounts.
 
-Current status: **Phase 9 Postman collection prepared; manual Postman run pending.** Date-only API fields use `MM/DD/YYYY`; transaction timestamps use `MM/DD/YYYY HH:mm:ss`.
+## Tech stack
 
-## Local setup
+- Backend framework: NestJS
+- ORM: TypeORM
+- Database: MySQL
+- Authentication: JWT
+- API testing: Postman
+- Version control: Git and GitHub
 
-Use Node.js and npm. This project was previously checked with Node 24.13.1 and npm 11.8.0. Some Nest CLI dependencies declare a newer minimum in the Node 24 line (24.15.0); use a compatible Node version when setting up another machine.
+## Run locally
 
-```powershell
-npm.cmd install
-Copy-Item .env.example .env
-```
+Prerequisites: Node.js, npm, and MySQL (XAMPP may be used to run MySQL).
 
-Start MySQL in XAMPP, then edit `.env` and set your own `DB_USERNAME` and `DB_PASSWORD`. Copy `.env.example` only if `.env` does not already exist. An empty password is accepted only when that is actually how your local MySQL account is configured. Keep credentials in `.env`; Git ignores it and allows the credential-free `.env.example`.
+1. Install dependencies. If you do not already have a `.env`, create one from the example:
 
-Set `JWT_SECRET` to a private random value of at least 32 bytes. Generate one with the command shown beside the variable in `.env.example`; never commit or share `.env`. The local setup generated a private secret because this repository's existing `.env` had an empty `JWT_SECRET`.
+   ```powershell
+   npm.cmd install
+   if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+   ```
 
-```powershell
-npm.cmd run db:create
-npm.cmd run db:check
-npm.cmd run db:migration:run
-npm.cmd run start:dev
-```
+2. Start MySQL. Edit `.env` and set `DB_USERNAME` and `DB_PASSWORD` to match your local MySQL account. Set `JWT_SECRET` to a private random value of at least 32 bytes (the generation command is in `.env.example`). Keep `.env` private; do not commit it.
 
-`npm run db:create` issues only `CREATE DATABASE IF NOT EXISTS cropwise_db` with `utf8mb4`; it does not modify other databases. `npm run db:check` performs a read-only `SELECT 1` and confirms the selected database. `DB_DATABASE` is restricted to `cropwise_db` so the application cannot accidentally target another database.
+3. Create and verify the project database, then run its migrations:
 
-The existing starter endpoint is:
+   ```powershell
+   npm.cmd run db:create
+   npm.cmd run db:check
+   npm.cmd run db:migration:run
+   ```
 
-```http
-GET http://localhost:3000/api/v1
-```
+4. Start the API:
 
-It returns `Hello World!`. Starting the application also requires a successful TypeORM connection to `cropwise_db`.
+   ```powershell
+   npm.cmd run start:dev
+   ```
 
-## Authentication
+   The API runs at `http://localhost:3000/api/v1`.
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | Create a standard user account |
-| `POST` | `/api/v1/auth/login` | Verify credentials and return a bearer access token |
-| `GET` | `/api/v1/auth/profile` | Return the signed-in user's safe profile |
+## Test with Postman
 
-Registration accepts `fullName`, `email` and `password`. Passwords need at least 8 characters and may not exceed 72 UTF-8 bytes. Email is trimmed and lowercased; duplicate addresses return `409`. Public registration always creates the `User` role. Responses never include password hashes. Login returns a JWT with the configured expiration (default one hour); send it on protected requests as `Authorization: Bearer <token>`. Invalid credentials and invalid or expired tokens return `401`.
-
-JWT logout is client-side: discard the token. This phase does not keep sessions, revoke individual tokens or issue refresh tokens, so a token remains usable until it expires. Keep token lifetimes short and protect tokens as credentials.
-
-For the first administrator, set `INITIAL_ADMIN_FULL_NAME`, `INITIAL_ADMIN_EMAIL`, and `INITIAL_ADMIN_PASSWORD` in your private `.env`, then run `npm.cmd run seed:admin`. This creates an Admin only if that email is unused; it never promotes or changes an existing account. Clear those optional seed values after setup.
-
-## User and crop endpoints
-
-All `/users` routes require a JWT for an Admin. These routes can create, list, view, update a user's name, email or role, and delete another user. Admin-created passwords are hashed; user responses never include password data. An Admin cannot change their own role or delete their own account, and deleting a user with related records returns `409 Conflict`.
-
-| Method | Endpoint | Access |
-| --- | --- | --- |
-| `POST` | `/api/v1/users` | Admin |
-| `GET` | `/api/v1/users` | Admin |
-| `GET` | `/api/v1/users/:id` | Admin |
-| `PATCH` | `/api/v1/users/:id` | Admin |
-| `DELETE` | `/api/v1/users/:id` | Admin |
-| `POST` | `/api/v1/crops` | Any signed-in user |
-| `GET` | `/api/v1/crops` | Own crops; Admin sees all |
-| `GET` | `/api/v1/crops/:id` | Owner or Admin |
-| `PATCH` | `/api/v1/crops/:id` | Owner or Admin |
-| `DELETE` | `/api/v1/crops/:id` | Owner or Admin |
-
-Crop fields are `cropName`, `cropType`, `plantingDate`, optional `expectedHarvestDate`, and optional `cropStatus`. Crop dates use valid `MM/DD/YYYY` values in requests and responses. The API derives crop ownership from the JWT; `userId` in a request is rejected. Expected harvest date cannot be earlier than planting date. A crop with related activities or harvests cannot be deleted and returns `409 Conflict`. Missing or out-of-scope crops return `404`.
-
-## Farm activity and harvest endpoints
-
-All routes require a valid JWT. Admins can manage records for any crop; regular users can manage records only for crops they own. Creating a record requires an existing accessible `cropId`. The crop link cannot be changed by an update request; send a new record if it belongs to another crop.
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `POST` | `/api/v1/farm-activities` | Create an activity for an accessible crop |
-| `GET` | `/api/v1/farm-activities` | List activities for owned crops; Admin sees all |
-| `GET` | `/api/v1/farm-activities/:id` | Get one accessible activity |
-| `PATCH` | `/api/v1/farm-activities/:id` | Update activity name, date, or notes |
-| `DELETE` | `/api/v1/farm-activities/:id` | Delete an accessible activity |
-| `POST` | `/api/v1/harvests` | Create a harvest record for an accessible crop |
-| `GET` | `/api/v1/harvests` | List harvests for owned crops; Admin sees all |
-| `GET` | `/api/v1/harvests/:id` | Get one accessible harvest |
-| `PATCH` | `/api/v1/harvests/:id` | Update harvest date, quantity, unit, or notes |
-| `DELETE` | `/api/v1/harvests/:id` | Delete an accessible harvest |
-
-Farm activity fields are `cropId`, `activityName`, `activityDate`, and optional `notes`. Harvest fields are `cropId`, `harvestDate`, `quantityHarvested`, `unit`, and optional `notes`. Date-only API inputs and responses use valid calendar dates in `MM/DD/YYYY` format. Invalid dates such as `02/30/2026` are rejected. Harvest quantity must be positive, have at most three decimal places, and fit the database column. Harvest records do not automatically change `CropStatus`.
-
-## Inventory endpoints
-
-All inventory endpoints require a JWT. Any signed-in user can view inventory; Admins can create, update, or delete items. New items start at quantity `0.000`; quantity is intentionally absent from item create/update bodies so all stock changes have a transaction record. Units cannot be changed after a transaction exists. Items with transaction history cannot be deleted.
-
-| Method | Endpoint | Access |
-| --- | --- | --- |
-| `POST` | `/api/v1/inventory` | Admin |
-| `GET` | `/api/v1/inventory` | Any signed-in user |
-| `GET` | `/api/v1/inventory/low-stock` | Any signed-in user |
-| `GET` | `/api/v1/inventory/:id` | Any signed-in user |
-| `PATCH` | `/api/v1/inventory/:id` | Admin |
-| `DELETE` | `/api/v1/inventory/:id` | Admin |
-
-Inventory item fields are `itemName`, `itemType`, `unit`, and optional `reorderLevel`. Low-stock results include items where `quantity <= reorderLevel`.
-
-## Inventory transaction endpoints
-
-| Method | Endpoint | Access |
-| --- | --- | --- |
-| `POST` | `/api/v1/inventory-transactions` | Any signed-in user |
-| `GET` | `/api/v1/inventory-transactions` | Own transactions; Admin sees all |
-| `GET` | `/api/v1/inventory-transactions/:id` | Owner or Admin |
-| `PATCH` | `/api/v1/inventory-transactions/:id` | Admin |
-| `DELETE` | `/api/v1/inventory-transactions/:id` | Admin |
-
-Create bodies require `inventoryId`, `transactionType` (`IN` or `OUT`), and positive `quantity`; `transactionDate` is optional and defaults to the database time. When supplied, transaction dates use `MM/DD/YYYY HH:mm:ss` with a 24-hour clock, and responses use the same format. The server keeps MySQL `DATE` and `DATETIME` storage and sets `userId` from the JWT. Quantities support up to three decimal places. Stock changes and transaction records are committed together under a database lock. Insufficient stock, or an edit/delete that cannot safely reverse its previous stock movement, returns `409 Conflict` without applying partial changes. Admin transaction edits reverse the old movement and apply the edited movement atomically.
-
-## Configuration
-
-| Variable       | Behavior                                                                     |
-| -------------- | ---------------------------------------------------------------------------- |
-| `NODE_ENV`     | `development`, `test`, or `production`; defaults to `development`            |
-| `PORT`         | Integer from 1 to 65535; defaults to `3000`                                  |
-| `CORS_ORIGINS` | Comma-separated exact HTTP(S) origins; empty disables browser CORS           |
-| `DB_HOST`      | Required outside tests; commonly `127.0.0.1` for XAMPP                       |
-| `DB_PORT`      | Required MySQL port from 1 to 65535; commonly `3306`                         |
-| `DB_USERNAME`  | Required; use the account configured in your local MySQL                     |
-| `DB_PASSWORD`  | Must be present; may be empty only for an intentionally blank MySQL password |
-| `DB_DATABASE`  | Must be `cropwise_db`                                                        |
-| `JWT_SECRET`   | Required outside tests; private signing secret of at least 32 bytes          |
-| `JWT_EXPIRES_IN` | Token lifetime in seconds, minutes, hours or days; defaults to `1h`        |
-| `INITIAL_ADMIN_*` | Optional one-time first administrator seed values                          |
-
-For a future browser client, set an exact origin such as `CORS_ORIGINS=http://localhost:5173`. Paths and wildcards are rejected. Blank origins grant no cross-origin browser access. Postman and server-to-server calls do not require CORS permission. CORS is a browser policy, not authentication.
-
-Global validation transforms declared DTO input, rejects unknown fields and invalid values. Future request DTOs must use validation decorators to receive these checks. Validation responses omit the submitted target and value. Nest's built-in exception handler handles HTTP errors and returns a generic message for unexpected failures; diagnostic details are not included in the response.
-
-Observe integration is disabled in `app.module.ts` and `main.ts` because it contained placeholder monitoring credentials. Its package remains installed; no existing source files were deleted.
-
-## Structure
-
-```text
-src/
-  common/configure-app.ts       Shared API prefix, validation and CORS setup
-  config/environment.ts         Environment parsing and startup validation
-  config/environment.spec.ts    Configuration tests
-  database/
-    data-source.ts              TypeORM CLI data source and migration discovery
-    database-options.ts         Shared MySQL connection, entities and migrations
-    migrations/                 Versioned schema changes
-  auth/                         Registration, login, JWT strategy, guard and profile
-  users/                        Admin user CRUD and role-based access
-  crops/                        Crop CRUD with per-owner access checks
-  farm-activities/              Crop-linked activity CRUD and ownership checks
-  harvests/                      Crop-linked harvest CRUD and ownership checks
-  inventory/                     Admin inventory writes, read access, and low-stock list
-  inventory-transactions/        Atomic IN/OUT stock movements and transaction history
-  scripts/seed-admin.ts         Optional one-time initial administrator command
-  users/entities/               User entity and role enum
-  crops/entities/               Crop entity and status enum
-  farm-activities/entities/     Farm activity entity
-  inventory/entities/           Inventory entity
-  inventory-transactions/entities/ Inventory transaction entity and enum
-  harvests/entities/            Harvest entity
-  app.module.ts                 Application module, global config and TypeORM
-  app.controller.ts             Existing starter endpoint
-  app.service.ts                Existing starter service
-  main.ts                       Server bootstrap and shutdown hooks
-scripts/
-  create-database.cjs           Creates only the cropwise_db database
-  check-database.cjs             Read-only MySQL connection check
-test/
-  app.e2e-spec.ts                HTTP configuration tests
-  jest-e2e.json                  HTTP test runner configuration
-.env.example                    Non-secret environment template
-```
-
-All six required entities are implemented in their domain folders. Authentication and Phases 5 through 7 CRUD modules are implemented. Phase 8 security checks pass. The Phase 9 Postman collection is prepared; its live run in the Postman app remains pending. Final deliverables remain for Phase 10.
-
-## Database commands
-
-```powershell
-npm.cmd run db:create
-npm.cmd run db:check
-npm.cmd run db:migration:generate -- src/database/migrations/InitialSchema
-npm.cmd run db:migration:run
-npm.cmd run db:migration:revert
-npm.cmd run db:migration:run:prod
-```
-
-TypeORM uses `synchronize: false` and does not automatically run migrations on startup. The initial migration creates all six tables. Run it only after `db:check` succeeds. Reverting this migration drops those six tables and their data.
-
-## Checks
-
-```powershell
-npm.cmd run build
-npm.cmd run lint
-npm.cmd test -- --runInBand
-npm.cmd run test:e2e -- --runInBand
-node node_modules/typescript/bin/tsc --noEmit -p tsconfig.json
-npm.cmd run db:check
-```
-
-The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
-
-## Postman collection
-
-Generate the collection and blank local environment template with:
-
-```powershell
-node scripts/generate-postman.cjs
-```
-
-In Postman, import `postman/collections/CropWise.postman_collection.json` and `postman/environments/CropWise Local.postman_environment.example.json`, then select the `CropWise Local` environment. Set `adminEmail`, `adminPassword`, `userPassword`, and `otherUserPassword`; the collection generates fresh test email addresses for registrations. Use an existing Admin account or seed one with the `seed:admin` command above. Keep real passwords and tokens only in your local Postman environment; do not export or commit an environment after those values are filled in. The generated `CropWise Local.postman_environment.json` is Git-ignored. Regenerating the collection preserves it if it already exists.
-
-Start MySQL and the backend, then run the collection in order. It tests the 34 implemented endpoints plus invalid input, authentication, role, ownership, and inventory stock cases. Create requests store returned record IDs and login requests save bearer tokens for later requests. Cleanup requests remove the test crops and inventory item after linked activities, harvests, and transactions are deleted. Postman shows each expected-status assertion and the actual response. The API accepts valid date-only values in `MM/DD/YYYY`; `transactionDate` uses `MM/DD/YYYY HH:mm:ss` with a 24-hour clock.
-
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The initial migration created six required tables and five foreign keys; the Nest server connected and `GET /api/v1` returned HTTP 200. Phases 4 through 6 checks passed. Phase 7 build, lint, TypeScript, unit, and HTTP e2e checks pass, including stock quantity changes, reversals, authorization, and input validation. Test probe endpoints exist only in the test module.
-
-## Phase 3 status and limitations
-
-The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
-
-Full API documentation and final project deliverables remain pending Phase 10. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
+Import `postman/collections/CropWise.postman_collection.json` and `postman/environments/CropWise Local.postman_environment.example.json`. Set the required local environment values, select `CropWise Local`, then run the `CropWise API` collection while the API and MySQL are running. Do not export or commit an environment containing real credentials or tokens.
