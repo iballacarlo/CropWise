@@ -12,6 +12,10 @@ import type { AuthUser } from '../src/auth/auth-user';
 import { RolesGuard } from '../src/auth/roles.guard';
 import { CropsController } from '../src/crops/crops.controller';
 import { CropsService } from '../src/crops/crops.service';
+import { FarmActivitiesController } from '../src/farm-activities/farm-activities.controller';
+import { FarmActivitiesService } from '../src/farm-activities/farm-activities.service';
+import { HarvestsController } from '../src/harvests/harvests.controller';
+import { HarvestsService } from '../src/harvests/harvests.service';
 import { UsersController } from '../src/users/users.controller';
 import { UserRole } from '../src/users/entities/user-role.enum';
 import { UsersService } from '../src/users/users.service';
@@ -48,6 +52,20 @@ describe('Users and crops routes (e2e)', () => {
     update: jest.fn(),
     remove: jest.fn(),
   };
+  const activitiesService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+  const harvestsService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
   const tokens = { admin: '', user: '' };
 
   beforeAll(async () => {
@@ -56,12 +74,19 @@ describe('Users and crops routes (e2e)', () => {
         PassportModule,
         JwtModule.register({ secret: 'phase-five-test-secret' }),
       ],
-      controllers: [UsersController, CropsController],
+      controllers: [
+        UsersController,
+        CropsController,
+        FarmActivitiesController,
+        HarvestsController,
+      ],
       providers: [
         RolesGuard,
         TestJwtStrategy,
         { provide: UsersService, useValue: usersService },
         { provide: CropsService, useValue: cropsService },
+        { provide: FarmActivitiesService, useValue: activitiesService },
+        { provide: HarvestsService, useValue: harvestsService },
         {
           provide: ConfigService,
           useValue: new ConfigService({ CORS_ORIGINS: '' }),
@@ -157,6 +182,65 @@ describe('Users and crops routes (e2e)', () => {
       .expect(201)
       .expect({ cropId: 8, cropName: 'Rice', userId: 7 });
     const createCall = cropsService.create.mock.calls[0] as unknown as [
+      Record<string, unknown>,
+      AuthUser,
+    ];
+    expect(createCall[1].userId).toBe(7);
+  });
+
+  it('rejects farm activity and harvest requests without a JWT', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/farm-activities')
+      .expect(401);
+    await request(app.getHttpServer()).get('/api/v1/harvests').expect(401);
+  });
+
+  it('rejects a nonpositive harvest quantity', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/harvests')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({
+        cropId: 8,
+        harvestDate: '2026-08-10',
+        quantityHarvested: 0,
+        unit: 'kg',
+      })
+      .expect(400);
+    expect(harvestsService.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects moving an activity or harvest to a different crop on update', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/v1/farm-activities/3')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ cropId: 9 })
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch('/api/v1/harvests/4')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ cropId: 9 })
+      .expect(400);
+    expect(activitiesService.update).not.toHaveBeenCalled();
+    expect(harvestsService.update).not.toHaveBeenCalled();
+  });
+
+  it('creates an activity using the authenticated account', async () => {
+    activitiesService.create.mockResolvedValue({
+      activityId: 6,
+      cropId: 8,
+      activityName: 'Watering',
+    } as never);
+    await request(app.getHttpServer())
+      .post('/api/v1/farm-activities')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({
+        cropId: 8,
+        activityName: 'Watering',
+        activityDate: '2026-06-15',
+      })
+      .expect(201)
+      .expect({ activityId: 6, cropId: 8, activityName: 'Watering' });
+    const createCall = activitiesService.create.mock.calls[0] as unknown as [
       Record<string, unknown>,
       AuthUser,
     ];

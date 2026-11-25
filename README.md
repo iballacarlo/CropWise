@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 5 user and crop CRUD implemented.** User management is Admin-only; crop records are scoped to their authenticated owner, with Admin access across owners.
+Current status: **Phase 6 farm activity and harvest CRUD implemented.** User management is Admin-only; crops, farm activities, and harvest records are scoped to their authenticated owner, with Admin access across owners.
 
 ## Local setup
 
@@ -67,6 +67,25 @@ All `/users` routes require a JWT for an Admin. These routes can create, list, v
 
 Crop fields are `cropName`, `cropType`, `plantingDate`, optional `expectedHarvestDate`, and optional `cropStatus`. The API derives crop ownership from the JWT; `userId` in a request is rejected. Expected harvest date cannot be earlier than planting date. A crop with related activities or harvests cannot be deleted and returns `409 Conflict`. Missing or out-of-scope crops return `404`.
 
+## Farm activity and harvest endpoints
+
+All routes require a valid JWT. Admins can manage records for any crop; regular users can manage records only for crops they own. Creating a record requires an existing accessible `cropId`. The crop link cannot be changed by an update request; send a new record if it belongs to another crop.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/farm-activities` | Create an activity for an accessible crop |
+| `GET` | `/api/v1/farm-activities` | List activities for owned crops; Admin sees all |
+| `GET` | `/api/v1/farm-activities/:id` | Get one accessible activity |
+| `PATCH` | `/api/v1/farm-activities/:id` | Update activity name, date, or notes |
+| `DELETE` | `/api/v1/farm-activities/:id` | Delete an accessible activity |
+| `POST` | `/api/v1/harvests` | Create a harvest record for an accessible crop |
+| `GET` | `/api/v1/harvests` | List harvests for owned crops; Admin sees all |
+| `GET` | `/api/v1/harvests/:id` | Get one accessible harvest |
+| `PATCH` | `/api/v1/harvests/:id` | Update harvest date, quantity, unit, or notes |
+| `DELETE` | `/api/v1/harvests/:id` | Delete an accessible harvest |
+
+Farm activity fields are `cropId`, `activityName`, `activityDate`, and optional `notes`. Harvest fields are `cropId`, `harvestDate`, `quantityHarvested`, `unit`, and optional `notes`. Dates must be valid ISO calendar dates. Harvest quantity must be positive, have at most three decimal places, and fit the database column. Harvest records do not automatically change `CropStatus`.
+
 ## Configuration
 
 | Variable       | Behavior                                                                     |
@@ -103,6 +122,8 @@ src/
   auth/                         Registration, login, JWT strategy, guard and profile
   users/                        Admin user CRUD and role-based access
   crops/                        Crop CRUD with per-owner access checks
+  farm-activities/              Crop-linked activity CRUD and ownership checks
+  harvests/                      Crop-linked harvest CRUD and ownership checks
   scripts/seed-admin.ts         Optional one-time initial administrator command
   users/entities/               User entity and role enum
   crops/entities/               Crop entity and status enum
@@ -123,7 +144,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-All six required entities are implemented in their domain folders. Authentication and the Phase 5 user and crop CRUD modules are implemented. Farm activity, harvest, and inventory modules remain for later phases.
+All six required entities are implemented in their domain folders. Authentication, Phase 5 user and crop CRUD, and Phase 6 farm activity and harvest CRUD are implemented. Inventory and inventory transaction modules remain for later phases.
 
 ## Database commands
 
@@ -151,10 +172,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 authentication checks passed. Phase 5 build, lint, TypeScript, unit, and HTTP e2e checks pass. The tests cover authentication boundaries, Admin role checks, owner-scoped crops, request validation, and existing global HTTP behavior. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 authentication checks passed. Phase 5 checks passed. Phase 6 build, lint, TypeScript, unit, and HTTP e2e checks pass, including ownership, valid crop references, input validation, and role-protected requests. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
 The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
-Farm activity, harvest, inventory, inventory transactions, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
+Inventory, inventory transactions, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.

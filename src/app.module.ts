@@ -9,6 +9,8 @@ import { createDatabaseOptions } from './database/database-options';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CropsModule } from './crops/crops.module';
+import { FarmActivitiesModule } from './farm-activities/farm-activities.module';
+import { HarvestsModule } from './harvests/harvests.module';
 
 const databaseModules =
   process.env.NODE_ENV === 'test'
@@ -42,7 +44,13 @@ const databaseModules =
     ...databaseModules,
     ...(process.env.NODE_ENV === 'test'
       ? []
-      : [AuthModule, UsersModule, CropsModule]),
+      : [
+          AuthModule,
+          UsersModule,
+          CropsModule,
+          FarmActivitiesModule,
+          HarvestsModule,
+        ]),
   ],
   controllers: [AppController],
   providers: [AppService],

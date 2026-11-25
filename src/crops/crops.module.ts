@@ -9,5 +9,6 @@ import { CropsService } from './crops.service';
   imports: [AuthModule, TypeOrmModule.forFeature([Crop])],
   controllers: [CropsController],
   providers: [CropsService],
+  exports: [CropsService],
 })
 export class CropsModule {}
