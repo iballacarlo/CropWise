@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
@@ -26,6 +35,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(@Body() input: LoginDto) {
     const user = await this.auth.validateCredentials(
       input.email,
