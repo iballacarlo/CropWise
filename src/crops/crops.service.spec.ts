@@ -44,7 +44,7 @@ describe('CropsService', () => {
     const input = {
       cropName: '  Rice ',
       cropType: '  Grain ',
-      plantingDate: '2026-01-10',
+      plantingDate: '01/10/2026',
       userId: 999,
     } as never;
 
@@ -53,6 +53,7 @@ describe('CropsService', () => {
     expect(saved.userId).toBe(user.userId);
     expect(saved.cropName).toBe('Rice');
     expect(saved.cropType).toBe('Grain');
+    expect(saved.plantingDate).toBe('2026-01-10');
   });
 
   it('limits regular users to their own crop list and gives admins all crops', async () => {
@@ -82,8 +83,8 @@ describe('CropsService', () => {
         {
           cropName: 'Rice',
           cropType: 'Grain',
-          plantingDate: '2026-05-01',
-          expectedHarvestDate: '2026-04-30',
+          plantingDate: '05/01/2026',
+          expectedHarvestDate: '04/30/2026',
         },
         user,
       ),
@@ -111,7 +112,7 @@ describe('CropsService', () => {
       {
         cropName: 'Rice',
         cropType: 'Grain',
-        plantingDate: '2026-05-01',
+        plantingDate: '05/01/2026',
         cropStatus: CropStatus.Planned,
       },
       user,

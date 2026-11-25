@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toDatabaseDate } from '../common/date-format';
 import type { AuthUser } from '../auth/auth-user';
 import { CropsService } from '../crops/crops.service';
 import { UserRole } from '../users/entities/user-role.enum';
@@ -28,7 +29,7 @@ export class FarmActivitiesService {
     const activity = this.activities.create({
       cropId: input.cropId,
       activityName: input.activityName.trim(),
-      activityDate: input.activityDate,
+      activityDate: toDatabaseDate(input.activityDate),
       notes: input.notes ?? null,
     });
     return this.activities.save(activity);
@@ -62,7 +63,7 @@ export class FarmActivitiesService {
       activity.activityName = input.activityName.trim();
     }
     if (input.activityDate !== undefined) {
-      activity.activityDate = input.activityDate;
+      activity.activityDate = toDatabaseDate(input.activityDate);
     }
     if (input.notes !== undefined) activity.notes = input.notes;
     return this.activities.save(activity);

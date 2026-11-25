@@ -33,6 +33,18 @@ class ConfigurationProbeController {
   fail(): never {
     throw new Error('private diagnostic details');
   }
+
+  @Get('dates')
+  dates() {
+    return [
+      {
+        plantingDate: '2026-02-03',
+        expectedHarvestDate: null,
+        transactionDate: new Date(2026, 1, 3, 4, 5, 6),
+      },
+      { harvestDate: '2026-09-01' },
+    ];
+  }
 }
 
 describe('AppController (e2e)', () => {
@@ -99,6 +111,20 @@ describe('AppController (e2e)', () => {
       .send({ name: 'Seeds', quantity: 2, Role: 'Admin' })
       .expect(400);
     expect(response.body.message).toContain('property Role should not exist');
+  });
+
+  it('formats database dates for API responses', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/configuration-probe/dates')
+      .expect(200);
+    expect(response.body).toEqual([
+      {
+        plantingDate: '02/03/2026',
+        expectedHarvestDate: null,
+        transactionDate: '02/03/2026 04:05:06',
+      },
+      { harvestDate: '09/01/2026' },
+    ]);
   });
 
   it('allows the configured browser origin', async () => {

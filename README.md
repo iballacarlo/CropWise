@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 7 inventory and inventory transaction CRUD implemented.** Admin-only inventory writes and role-scoped transaction access preserve stock history.
+Current status: **Phase 9 Postman collection prepared; manual Postman run pending.** Date-only API fields use `MM/DD/YYYY`; transaction timestamps use `MM/DD/YYYY HH:mm:ss`.
 
 ## Local setup
 
@@ -65,7 +65,7 @@ All `/users` routes require a JWT for an Admin. These routes can create, list, v
 | `PATCH` | `/api/v1/crops/:id` | Owner or Admin |
 | `DELETE` | `/api/v1/crops/:id` | Owner or Admin |
 
-Crop fields are `cropName`, `cropType`, `plantingDate`, optional `expectedHarvestDate`, and optional `cropStatus`. The API derives crop ownership from the JWT; `userId` in a request is rejected. Expected harvest date cannot be earlier than planting date. A crop with related activities or harvests cannot be deleted and returns `409 Conflict`. Missing or out-of-scope crops return `404`.
+Crop fields are `cropName`, `cropType`, `plantingDate`, optional `expectedHarvestDate`, and optional `cropStatus`. Crop dates use valid `MM/DD/YYYY` values in requests and responses. The API derives crop ownership from the JWT; `userId` in a request is rejected. Expected harvest date cannot be earlier than planting date. A crop with related activities or harvests cannot be deleted and returns `409 Conflict`. Missing or out-of-scope crops return `404`.
 
 ## Farm activity and harvest endpoints
 
@@ -84,7 +84,7 @@ All routes require a valid JWT. Admins can manage records for any crop; regular 
 | `PATCH` | `/api/v1/harvests/:id` | Update harvest date, quantity, unit, or notes |
 | `DELETE` | `/api/v1/harvests/:id` | Delete an accessible harvest |
 
-Farm activity fields are `cropId`, `activityName`, `activityDate`, and optional `notes`. Harvest fields are `cropId`, `harvestDate`, `quantityHarvested`, `unit`, and optional `notes`. Dates must be valid ISO calendar dates. Harvest quantity must be positive, have at most three decimal places, and fit the database column. Harvest records do not automatically change `CropStatus`.
+Farm activity fields are `cropId`, `activityName`, `activityDate`, and optional `notes`. Harvest fields are `cropId`, `harvestDate`, `quantityHarvested`, `unit`, and optional `notes`. Date-only API inputs and responses use valid calendar dates in `MM/DD/YYYY` format. Invalid dates such as `02/30/2026` are rejected. Harvest quantity must be positive, have at most three decimal places, and fit the database column. Harvest records do not automatically change `CropStatus`.
 
 ## Inventory endpoints
 
@@ -111,7 +111,7 @@ Inventory item fields are `itemName`, `itemType`, `unit`, and optional `reorderL
 | `PATCH` | `/api/v1/inventory-transactions/:id` | Admin |
 | `DELETE` | `/api/v1/inventory-transactions/:id` | Admin |
 
-Create bodies require `inventoryId`, `transactionType` (`IN` or `OUT`), and positive `quantity`; `transactionDate` is optional and defaults to the database time. The server sets `userId` from the JWT. Quantities support up to three decimal places. Stock changes and transaction records are committed together under a database lock. Insufficient stock, or an edit/delete that cannot safely reverse its previous stock movement, returns `409 Conflict` without applying partial changes. Admin transaction edits reverse the old movement and apply the edited movement atomically.
+Create bodies require `inventoryId`, `transactionType` (`IN` or `OUT`), and positive `quantity`; `transactionDate` is optional and defaults to the database time. When supplied, transaction dates use `MM/DD/YYYY HH:mm:ss` with a 24-hour clock, and responses use the same format. The server keeps MySQL `DATE` and `DATETIME` storage and sets `userId` from the JWT. Quantities support up to three decimal places. Stock changes and transaction records are committed together under a database lock. Insufficient stock, or an edit/delete that cannot safely reverse its previous stock movement, returns `409 Conflict` without applying partial changes. Admin transaction edits reverse the old movement and apply the edited movement atomically.
 
 ## Configuration
 
@@ -173,7 +173,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-All six required entities are implemented in their domain folders. Authentication and Phases 5 through 7 CRUD modules are implemented. Authorization hardening, Postman collection, and final deliverables remain for later phases.
+All six required entities are implemented in their domain folders. Authentication and Phases 5 through 7 CRUD modules are implemented. Phase 8 security checks pass. The Phase 9 Postman collection is prepared; its live run in the Postman app remains pending. Final deliverables remain for Phase 10.
 
 ## Database commands
 
@@ -201,10 +201,22 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
+## Postman collection
+
+Generate the collection and blank local environment template with:
+
+```powershell
+node scripts/generate-postman.cjs
+```
+
+In Postman, import `postman/collections/CropWise.postman_collection.json` and `postman/environments/CropWise Local.postman_environment.example.json`, then select the `CropWise Local` environment. Set `adminEmail`, `adminPassword`, `userPassword`, and `otherUserPassword`; the collection generates fresh test email addresses for registrations. Use an existing Admin account or seed one with the `seed:admin` command above. Keep real passwords and tokens only in your local Postman environment; do not export or commit an environment after those values are filled in. The generated `CropWise Local.postman_environment.json` is Git-ignored. Regenerating the collection preserves it if it already exists.
+
+Start MySQL and the backend, then run the collection in order. It tests the 34 implemented endpoints plus invalid input, authentication, role, ownership, and inventory stock cases. Create requests store returned record IDs and login requests save bearer tokens for later requests. Cleanup requests remove the test crops and inventory item after linked activities, harvests, and transactions are deleted. Postman shows each expected-status assertion and the actual response. The API accepts valid date-only values in `MM/DD/YYYY`; `transactionDate` uses `MM/DD/YYYY HH:mm:ss` with a 24-hour clock.
+
 Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The initial migration created six required tables and five foreign keys; the Nest server connected and `GET /api/v1` returned HTTP 200. Phases 4 through 6 checks passed. Phase 7 build, lint, TypeScript, unit, and HTTP e2e checks pass, including stock quantity changes, reversals, authorization, and input validation. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
 The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
-Authorization hardening, Postman collection, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
+Full API documentation and final project deliverables remain pending Phase 10. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.

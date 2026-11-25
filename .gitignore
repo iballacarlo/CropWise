@@ -47,6 +47,9 @@ lerna-debug.log*
 .env.*
 !.env.example
 
+# Local Postman environment may contain credentials and JWTs
+/postman/environments/CropWise Local.postman_environment.json
+
 # temp directory
 .temp
 .tmp

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toDatabaseDate } from '../common/date-format';
 import type { AuthUser } from '../auth/auth-user';
 import { UserRole } from '../users/entities/user-role.enum';
 import { Crop } from './entities/crop.entity';
@@ -19,12 +20,17 @@ export class CropsService {
   ) {}
 
   async create(input: CreateCropDto, actor: AuthUser): Promise<Crop> {
-    validateDateRange(input.plantingDate, input.expectedHarvestDate);
+    const plantingDate = toDatabaseDate(input.plantingDate);
+    const expectedHarvestDate = input.expectedHarvestDate
+      ? toDatabaseDate(input.expectedHarvestDate)
+      : null;
+    validateDateRange(plantingDate, expectedHarvestDate);
     const crop = this.crops.create({
       ...input,
+      plantingDate,
       cropName: input.cropName.trim(),
       cropType: input.cropType.trim(),
-      expectedHarvestDate: input.expectedHarvestDate ?? null,
+      expectedHarvestDate,
       userId: actor.userId,
     });
     return this.crops.save(crop);
@@ -52,18 +58,21 @@ export class CropsService {
       throw new BadRequestException('At least one crop field is required.');
     }
     const crop = await this.findOwnedCrop(cropId, actor);
-    validateDateRange(
-      input.plantingDate ?? crop.plantingDate,
+    const plantingDate = input.plantingDate
+      ? toDatabaseDate(input.plantingDate)
+      : crop.plantingDate;
+    const expectedHarvestDate =
       input.expectedHarvestDate === undefined
         ? crop.expectedHarvestDate
-        : input.expectedHarvestDate,
-    );
+        : input.expectedHarvestDate === null
+          ? null
+          : toDatabaseDate(input.expectedHarvestDate);
+    validateDateRange(plantingDate, expectedHarvestDate);
     if (input.cropName !== undefined) crop.cropName = input.cropName.trim();
     if (input.cropType !== undefined) crop.cropType = input.cropType.trim();
-    if (input.plantingDate !== undefined)
-      crop.plantingDate = input.plantingDate;
+    if (input.plantingDate !== undefined) crop.plantingDate = plantingDate;
     if (input.expectedHarvestDate !== undefined) {
-      crop.expectedHarvestDate = input.expectedHarvestDate;
+      crop.expectedHarvestDate = expectedHarvestDate;
     }
     if (input.cropStatus !== undefined) crop.cropStatus = input.cropStatus;
     return this.crops.save(crop);

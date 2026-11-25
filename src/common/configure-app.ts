@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DateFormatInterceptor } from './date-format.interceptor';
 
 // Shared by the real server and HTTP tests so their behavior stays consistent.
 export function configureApp(app: INestApplication): void {
@@ -12,6 +13,7 @@ export function configureApp(app: INestApplication): void {
     .filter(Boolean);
 
   app.setGlobalPrefix('api/v1');
+  app.useGlobalInterceptors(new DateFormatInterceptor());
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

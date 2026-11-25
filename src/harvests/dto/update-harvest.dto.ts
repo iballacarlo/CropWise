@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsNumber,
   IsOptional,
   IsString,
@@ -9,10 +8,11 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { IsUsDate } from '../../common/date-format';
 
 export class UpdateHarvestDto {
   @IsOptional()
-  @IsDateString({ strict: true })
+  @IsUsDate()
   harvestDate?: string;
 
   @IsOptional()

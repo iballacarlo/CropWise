@@ -44,7 +44,7 @@ describe('HarvestsService', () => {
     await service.create(
       {
         cropId: 5,
-        harvestDate: '2026-08-10',
+        harvestDate: '08/10/2026',
         quantityHarvested: 2.5,
         unit: ' kg ',
       },
@@ -55,6 +55,7 @@ describe('HarvestsService', () => {
     expect(repository.create.mock.calls[0][0]).toMatchObject({
       cropId: 5,
       quantityHarvested: '2.500',
+      harvestDate: '2026-08-10',
       unit: 'kg',
       notes: null,
     });

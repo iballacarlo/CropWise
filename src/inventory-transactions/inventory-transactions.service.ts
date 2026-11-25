@@ -7,6 +7,7 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import type { EntityManager } from 'typeorm';
+import { toDatabaseDateTime } from '../common/date-format';
 import type { AuthUser } from '../auth/auth-user';
 import { Inventory } from '../inventory/entities/inventory.entity';
 import { UserRole } from '../users/entities/user-role.enum';
@@ -47,7 +48,7 @@ export class InventoryTransactionsService {
         transactionType: input.transactionType,
         quantity: fromStockUnits(quantity),
         transactionDate: input.transactionDate
-          ? new Date(input.transactionDate)
+          ? toDatabaseDateTime(input.transactionDate)
           : undefined,
       });
       return manager.getRepository(InventoryTransaction).save(transaction);
@@ -113,7 +114,7 @@ export class InventoryTransactionsService {
       transaction.transactionType = nextType;
       transaction.quantity = fromStockUnits(nextQuantity);
       if (input.transactionDate !== undefined) {
-        transaction.transactionDate = new Date(input.transactionDate);
+        transaction.transactionDate = toDatabaseDateTime(input.transactionDate);
       }
 
       await manager.getRepository(Inventory).save(item);

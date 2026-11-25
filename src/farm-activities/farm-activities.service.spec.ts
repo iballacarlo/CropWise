@@ -46,7 +46,7 @@ describe('FarmActivitiesService', () => {
       {
         cropId: 5,
         activityName: '  Watering ',
-        activityDate: '2026-05-03',
+        activityDate: '05/03/2026',
       },
       user,
     );
@@ -55,6 +55,7 @@ describe('FarmActivitiesService', () => {
     expect(repository.create.mock.calls[0][0]).toMatchObject({
       cropId: 5,
       activityName: 'Watering',
+      activityDate: '2026-05-03',
       notes: null,
     });
   });

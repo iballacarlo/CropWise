@@ -1,12 +1,12 @@
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsEnum,
   IsNumber,
   IsOptional,
   Max,
   Min,
 } from 'class-validator';
+import { IsUsDateTime } from '../../common/date-format';
 import { InventoryTransactionType } from '../entities/inventory-transaction-type.enum';
 
 export class UpdateInventoryTransactionDto {
@@ -22,6 +22,6 @@ export class UpdateInventoryTransactionDto {
   quantity?: number;
 
   @IsOptional()
-  @IsDateString()
+  @IsUsDateTime()
   transactionDate?: string;
 }

@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsInt,
   IsNumber,
   IsOptional,
@@ -10,6 +9,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { IsUsDate } from '../../common/date-format';
 
 export class CreateHarvestDto {
   @Type(() => Number)
@@ -17,7 +17,7 @@ export class CreateHarvestDto {
   @Min(1)
   cropId!: number;
 
-  @IsDateString({ strict: true })
+  @IsUsDate()
   harvestDate!: string;
 
   @Type(() => Number)

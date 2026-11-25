@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  IsDateString,
   IsInt,
   IsOptional,
   IsString,
@@ -9,6 +8,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { IsUsDate } from '../../common/date-format';
 
 export class CreateFarmActivityDto {
   @Type(() => Number)
@@ -22,7 +22,7 @@ export class CreateFarmActivityDto {
   @Matches(/\S/)
   activityName!: string;
 
-  @IsDateString({ strict: true })
+  @IsUsDate()
   activityDate!: string;
 
   @IsOptional()

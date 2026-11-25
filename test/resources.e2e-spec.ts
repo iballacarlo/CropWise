@@ -205,7 +205,7 @@ describe('Users and crops routes (e2e)', () => {
       .send({
         cropName: 'Rice',
         cropType: 'Grain',
-        plantingDate: '2026-05-01',
+        plantingDate: '05/01/2026',
         userId: 1,
       })
       .expect(400);
@@ -224,7 +224,7 @@ describe('Users and crops routes (e2e)', () => {
       .send({
         cropName: 'Rice',
         cropType: 'Grain',
-        plantingDate: '2026-05-01',
+        plantingDate: '05/01/2026',
       })
       .expect(201)
       .expect({ cropId: 8, cropName: 'Rice', userId: 7 });
@@ -233,6 +233,19 @@ describe('Users and crops routes (e2e)', () => {
       AuthUser,
     ];
     expect(createCall[1].userId).toBe(7);
+  });
+
+  it('rejects invalid calendar dates in crop requests', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/crops')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({
+        cropName: 'Rice',
+        cropType: 'Grain',
+        plantingDate: '02/30/2026',
+      })
+      .expect(400);
+    expect(cropsService.create).not.toHaveBeenCalled();
   });
 
   it('rejects farm activity and harvest requests without a JWT', async () => {
@@ -248,7 +261,7 @@ describe('Users and crops routes (e2e)', () => {
       .set('Authorization', `Bearer ${tokens.user}`)
       .send({
         cropId: 8,
-        harvestDate: '2026-08-10',
+        harvestDate: '08/10/2026',
         quantityHarvested: 0,
         unit: 'kg',
       })
@@ -283,7 +296,7 @@ describe('Users and crops routes (e2e)', () => {
       .send({
         cropId: 8,
         activityName: 'Watering',
-        activityDate: '2026-06-15',
+        activityDate: '06/15/2026',
       })
       .expect(201)
       .expect({ activityId: 6, cropId: 8, activityName: 'Watering' });
@@ -337,6 +350,16 @@ describe('Users and crops routes (e2e)', () => {
       .set('Authorization', `Bearer ${tokens.user}`)
       .send({ inventoryId: 3, transactionType: 'OUT', quantity: 0 })
       .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory-transactions')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({
+        inventoryId: 3,
+        transactionType: 'IN',
+        quantity: 1,
+        transactionDate: '2026-07-01T12:00:00.000Z',
+      })
+      .expect(400);
     expect(inventoryTransactionsService.create).not.toHaveBeenCalled();
   });
 
@@ -351,7 +374,12 @@ describe('Users and crops routes (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/inventory-transactions')
       .set('Authorization', `Bearer ${tokens.user}`)
-      .send({ inventoryId: 3, transactionType: 'IN', quantity: 2 })
+      .send({
+        inventoryId: 3,
+        transactionType: 'IN',
+        quantity: 2,
+        transactionDate: '07/01/2026 12:00:00',
+      })
       .expect(201)
       .expect({
         transactionId: 6,
@@ -363,6 +391,7 @@ describe('Users and crops routes (e2e)', () => {
     const createCall = inventoryTransactionsService.create.mock
       .calls[0] as unknown as [Record<string, unknown>, AuthUser];
     expect(createCall[1].userId).toBe(7);
+    expect(createCall[0].transactionDate).toBe('07/01/2026 12:00:00');
   });
 
   it('restricts inventory transaction edits to Admins', async () => {

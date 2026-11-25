@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { toDatabaseDate } from '../common/date-format';
 import type { AuthUser } from '../auth/auth-user';
 import { CropsService } from '../crops/crops.service';
 import { UserRole } from '../users/entities/user-role.enum';
@@ -24,7 +25,7 @@ export class HarvestsService {
     await this.crops.findOne(input.cropId, actor);
     const harvest = this.harvests.create({
       cropId: input.cropId,
-      harvestDate: input.harvestDate,
+      harvestDate: toDatabaseDate(input.harvestDate),
       quantityHarvested: input.quantityHarvested.toFixed(3),
       unit: input.unit.trim(),
       notes: input.notes ?? null,
@@ -57,7 +58,7 @@ export class HarvestsService {
     }
     const harvest = await this.findAccessibleHarvest(harvestId, actor);
     if (input.harvestDate !== undefined) {
-      harvest.harvestDate = input.harvestDate;
+      harvest.harvestDate = toDatabaseDate(input.harvestDate);
     }
     if (input.quantityHarvested !== undefined) {
       harvest.quantityHarvested = input.quantityHarvested.toFixed(3);

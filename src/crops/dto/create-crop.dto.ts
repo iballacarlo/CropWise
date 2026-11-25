@@ -1,5 +1,4 @@
 import {
-  IsDateString,
   IsEnum,
   IsOptional,
   IsString,
@@ -7,6 +6,7 @@ import {
   Matches,
   MinLength,
 } from 'class-validator';
+import { IsUsDate } from '../../common/date-format';
 import { CropStatus } from '../entities/crop-status.enum';
 
 export class CreateCropDto {
@@ -22,11 +22,11 @@ export class CreateCropDto {
   @Matches(/\S/)
   cropType!: string;
 
-  @IsDateString({ strict: true })
+  @IsUsDate()
   plantingDate!: string;
 
   @IsOptional()
-  @IsDateString({ strict: true })
+  @IsUsDate()
   expectedHarvestDate?: string | null;
 
   @IsOptional()

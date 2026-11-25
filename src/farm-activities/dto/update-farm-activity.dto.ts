@@ -1,11 +1,11 @@
 import {
-  IsDateString,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { IsUsDate } from '../../common/date-format';
 
 export class UpdateFarmActivityDto {
   @IsOptional()
@@ -16,7 +16,7 @@ export class UpdateFarmActivityDto {
   activityName?: string;
 
   @IsOptional()
-  @IsDateString({ strict: true })
+  @IsUsDate()
   activityDate?: string;
 
   @IsOptional()
