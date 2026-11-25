@@ -5,6 +5,18 @@ export function validateEnvironment(values: Record<string, unknown>) {
   }
   const isTest = nodeEnv === 'test';
 
+  const jwtSecret = String(
+    values.JWT_SECRET ??
+      (isTest ? 'test-only-secret-that-is-not-used-in-production' : ''),
+  );
+  if (!isTest && Buffer.byteLength(jwtSecret, 'utf8') < 32) {
+    throw new Error('JWT_SECRET must contain at least 32 bytes.');
+  }
+  const jwtExpiresIn = String(values.JWT_EXPIRES_IN ?? '1h');
+  if (!/^[1-9]\d*[smhd]$/.test(jwtExpiresIn)) {
+    throw new Error('JWT_EXPIRES_IN must use a duration such as 15m or 1h.');
+  }
+
   const rawPort = String(values.PORT ?? '3000');
   const port = Number(rawPort);
   if (
@@ -84,5 +96,7 @@ export function validateEnvironment(values: Record<string, unknown>) {
     DB_USERNAME: dbUsername,
     DB_PASSWORD: values.DB_PASSWORD ?? '',
     DB_DATABASE: dbDatabase,
+    JWT_SECRET: jwtSecret,
+    JWT_EXPIRES_IN: jwtExpiresIn,
   };
 }

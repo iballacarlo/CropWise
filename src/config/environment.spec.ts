@@ -18,13 +18,30 @@ describe('environment configuration', () => {
       DB_HOST: '127.0.0.1',
       DB_PORT: 3306,
       DB_DATABASE: 'cropwise_db',
+      JWT_SECRET: 'test-only-secret-that-is-not-used-in-production',
+      JWT_EXPIRES_IN: '1h',
     });
   });
 
+  it('requires a strong JWT secret outside tests', () => {
+    const productionLike = {
+      ...testEnvironment,
+      NODE_ENV: 'development',
+      JWT_SECRET: 'a-private-secret-with-at-least-32-bytes',
+    };
+    expect(() =>
+      validateEnvironment({ ...productionLike, JWT_SECRET: 'too-short' }),
+    ).toThrow('JWT_SECRET');
+    expect(validateEnvironment(productionLike).JWT_EXPIRES_IN).toBe('1h');
+  });
+
   it('requires explicit database configuration outside tests', () => {
-    expect(() => validateEnvironment({ NODE_ENV: 'development' })).toThrow(
-      'DB_HOST is required',
-    );
+    expect(() =>
+      validateEnvironment({
+        NODE_ENV: 'development',
+        JWT_SECRET: 'a-private-secret-with-at-least-32-bytes',
+      }),
+    ).toThrow('DB_HOST is required');
   });
 
   it.each(['', '0', '65536', '3000.5', 'abc', '3e3'])(

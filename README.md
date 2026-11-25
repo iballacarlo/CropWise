@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 3 entities and initial migration implemented and verified against local MySQL.** The initial migration created the six required tables in `cropwise_db`; authentication and business CRUD will be added in later approved phases.
+Current status: **Phase 4 authentication implemented.** Local MySQL schema from Phase 3 contains the user table needed for registration and sign-in. Crop and inventory CRUD are subsequent phases.
 
 ## Local setup
 
@@ -14,6 +14,8 @@ Copy-Item .env.example .env
 ```
 
 Start MySQL in XAMPP, then edit `.env` and set your own `DB_USERNAME` and `DB_PASSWORD`. Copy `.env.example` only if `.env` does not already exist. An empty password is accepted only when that is actually how your local MySQL account is configured. Keep credentials in `.env`; Git ignores it and allows the credential-free `.env.example`.
+
+Set `JWT_SECRET` to a private random value of at least 32 bytes. Generate one with the command shown beside the variable in `.env.example`; never commit or share `.env`. The local setup generated a private secret because this repository's existing `.env` had an empty `JWT_SECRET`.
 
 ```powershell
 npm.cmd run db:create
@@ -30,7 +32,21 @@ The existing starter endpoint is:
 GET http://localhost:3000/api/v1
 ```
 
-It returns `Hello World!`. Starting the application also requires a successful TypeORM connection to `cropwise_db`; authentication and business endpoints are not implemented yet.
+It returns `Hello World!`. Starting the application also requires a successful TypeORM connection to `cropwise_db`.
+
+## Authentication
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | Create a standard user account |
+| `POST` | `/api/v1/auth/login` | Verify credentials and return a bearer access token |
+| `GET` | `/api/v1/auth/profile` | Return the signed-in user's safe profile |
+
+Registration accepts `fullName`, `email` and `password`. Passwords need at least 8 characters and may not exceed 72 UTF-8 bytes. Email is trimmed and lowercased; duplicate addresses return `409`. Public registration always creates the `User` role. Responses never include password hashes. Login returns a JWT with the configured expiration (default one hour); send it on protected requests as `Authorization: Bearer <token>`. Invalid credentials and invalid or expired tokens return `401`.
+
+JWT logout is client-side: discard the token. This phase does not keep sessions, revoke individual tokens or issue refresh tokens, so a token remains usable until it expires. Keep token lifetimes short and protect tokens as credentials.
+
+For the first administrator, set `INITIAL_ADMIN_FULL_NAME`, `INITIAL_ADMIN_EMAIL`, and `INITIAL_ADMIN_PASSWORD` in your private `.env`, then run `npm.cmd run seed:admin`. This creates an Admin only if that email is unused; it never promotes or changes an existing account. Clear those optional seed values after setup.
 
 ## Configuration
 
@@ -44,7 +60,9 @@ It returns `Hello World!`. Starting the application also requires a successful T
 | `DB_USERNAME`  | Required; use the account configured in your local MySQL                     |
 | `DB_PASSWORD`  | Must be present; may be empty only for an intentionally blank MySQL password |
 | `DB_DATABASE`  | Must be `cropwise_db`                                                        |
-| `JWT_*`        | Reserved for Phase 4; authentication is not enabled yet                      |
+| `JWT_SECRET`   | Required outside tests; private signing secret of at least 32 bytes          |
+| `JWT_EXPIRES_IN` | Token lifetime in seconds, minutes, hours or days; defaults to `1h`        |
+| `INITIAL_ADMIN_*` | Optional one-time first administrator seed values                          |
 
 For a future browser client, set an exact origin such as `CORS_ORIGINS=http://localhost:5173`. Paths and wildcards are rejected. Blank origins grant no cross-origin browser access. Postman and server-to-server calls do not require CORS permission. CORS is a browser policy, not authentication.
 
@@ -63,6 +81,8 @@ src/
     data-source.ts              TypeORM CLI data source and migration discovery
     database-options.ts         Shared MySQL connection, entities and migrations
     migrations/                 Versioned schema changes
+  auth/                         Registration, login, JWT strategy, guard and profile
+  scripts/seed-admin.ts         Optional one-time initial administrator command
   users/entities/               User entity and role enum
   crops/entities/               Crop entity and status enum
   farm-activities/entities/     Farm activity entity
@@ -82,7 +102,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-The six required entities are implemented in their domain folders. Auth and business controllers, services and feature modules will be added in the approved phases. No empty feature modules have been added.
+The six required entities are implemented in their domain folders. Authentication is implemented; business CRUD controllers and services remain for later phases.
 
 ## Database commands
 
@@ -110,10 +130,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passes build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 build, lint, and TypeScript checks pass. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
 The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
-All later features and final project deliverables remain pending their respective phase approvals. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), and [CORS](https://docs.nestjs.com/security/cors) documentation.
+Later business features and final project deliverables remain pending their respective phase approvals. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.

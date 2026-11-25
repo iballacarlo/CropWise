@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 
 import { validateEnvironment } from './config/environment';
 import { createDatabaseOptions } from './database/database-options';
+import { AuthModule } from './auth/auth.module';
 
 const databaseModules =
   process.env.NODE_ENV === 'test'
@@ -37,6 +38,7 @@ const databaseModules =
       validate: validateEnvironment,
     }),
     ...databaseModules,
+    ...(process.env.NODE_ENV === 'test' ? [] : [AuthModule]),
   ],
   controllers: [AppController],
   providers: [AppService],
