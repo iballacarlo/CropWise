@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 6 farm activity and harvest CRUD implemented.** User management is Admin-only; crops, farm activities, and harvest records are scoped to their authenticated owner, with Admin access across owners.
+Current status: **Phase 7 inventory and inventory transaction CRUD implemented.** Admin-only inventory writes and role-scoped transaction access preserve stock history.
 
 ## Local setup
 
@@ -86,6 +86,33 @@ All routes require a valid JWT. Admins can manage records for any crop; regular 
 
 Farm activity fields are `cropId`, `activityName`, `activityDate`, and optional `notes`. Harvest fields are `cropId`, `harvestDate`, `quantityHarvested`, `unit`, and optional `notes`. Dates must be valid ISO calendar dates. Harvest quantity must be positive, have at most three decimal places, and fit the database column. Harvest records do not automatically change `CropStatus`.
 
+## Inventory endpoints
+
+All inventory endpoints require a JWT. Any signed-in user can view inventory; Admins can create, update, or delete items. New items start at quantity `0.000`; quantity is intentionally absent from item create/update bodies so all stock changes have a transaction record. Units cannot be changed after a transaction exists. Items with transaction history cannot be deleted.
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `POST` | `/api/v1/inventory` | Admin |
+| `GET` | `/api/v1/inventory` | Any signed-in user |
+| `GET` | `/api/v1/inventory/low-stock` | Any signed-in user |
+| `GET` | `/api/v1/inventory/:id` | Any signed-in user |
+| `PATCH` | `/api/v1/inventory/:id` | Admin |
+| `DELETE` | `/api/v1/inventory/:id` | Admin |
+
+Inventory item fields are `itemName`, `itemType`, `unit`, and optional `reorderLevel`. Low-stock results include items where `quantity <= reorderLevel`.
+
+## Inventory transaction endpoints
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `POST` | `/api/v1/inventory-transactions` | Any signed-in user |
+| `GET` | `/api/v1/inventory-transactions` | Own transactions; Admin sees all |
+| `GET` | `/api/v1/inventory-transactions/:id` | Owner or Admin |
+| `PATCH` | `/api/v1/inventory-transactions/:id` | Admin |
+| `DELETE` | `/api/v1/inventory-transactions/:id` | Admin |
+
+Create bodies require `inventoryId`, `transactionType` (`IN` or `OUT`), and positive `quantity`; `transactionDate` is optional and defaults to the database time. The server sets `userId` from the JWT. Quantities support up to three decimal places. Stock changes and transaction records are committed together under a database lock. Insufficient stock, or an edit/delete that cannot safely reverse its previous stock movement, returns `409 Conflict` without applying partial changes. Admin transaction edits reverse the old movement and apply the edited movement atomically.
+
 ## Configuration
 
 | Variable       | Behavior                                                                     |
@@ -124,6 +151,8 @@ src/
   crops/                        Crop CRUD with per-owner access checks
   farm-activities/              Crop-linked activity CRUD and ownership checks
   harvests/                      Crop-linked harvest CRUD and ownership checks
+  inventory/                     Admin inventory writes, read access, and low-stock list
+  inventory-transactions/        Atomic IN/OUT stock movements and transaction history
   scripts/seed-admin.ts         Optional one-time initial administrator command
   users/entities/               User entity and role enum
   crops/entities/               Crop entity and status enum
@@ -144,7 +173,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-All six required entities are implemented in their domain folders. Authentication, Phase 5 user and crop CRUD, and Phase 6 farm activity and harvest CRUD are implemented. Inventory and inventory transaction modules remain for later phases.
+All six required entities are implemented in their domain folders. Authentication and Phases 5 through 7 CRUD modules are implemented. Authorization hardening, Postman collection, and final deliverables remain for later phases.
 
 ## Database commands
 
@@ -172,10 +201,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 authentication checks passed. Phase 5 checks passed. Phase 6 build, lint, TypeScript, unit, and HTTP e2e checks pass, including ownership, valid crop references, input validation, and role-protected requests. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The initial migration created six required tables and five foreign keys; the Nest server connected and `GET /api/v1` returned HTTP 200. Phases 4 through 6 checks passed. Phase 7 build, lint, TypeScript, unit, and HTTP e2e checks pass, including stock quantity changes, reversals, authorization, and input validation. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
 The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
-Inventory, inventory transactions, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
+Authorization hardening, Postman collection, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.

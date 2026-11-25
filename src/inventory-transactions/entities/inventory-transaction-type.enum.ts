@@ -1,4 +1,4 @@
 export enum InventoryTransactionType {
-  Add = 'ADD',
-  Deduct = 'DEDUCT',
+  In = 'IN',
+  Out = 'OUT',
 }

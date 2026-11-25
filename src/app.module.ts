@@ -11,6 +11,8 @@ import { UsersModule } from './users/users.module';
 import { CropsModule } from './crops/crops.module';
 import { FarmActivitiesModule } from './farm-activities/farm-activities.module';
 import { HarvestsModule } from './harvests/harvests.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { InventoryTransactionsModule } from './inventory-transactions/inventory-transactions.module';
 
 const databaseModules =
   process.env.NODE_ENV === 'test'
@@ -50,6 +52,8 @@ const databaseModules =
           CropsModule,
           FarmActivitiesModule,
           HarvestsModule,
+          InventoryModule,
+          InventoryTransactionsModule,
         ]),
   ],
   controllers: [AppController],

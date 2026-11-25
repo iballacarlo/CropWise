@@ -16,6 +16,10 @@ import { FarmActivitiesController } from '../src/farm-activities/farm-activities
 import { FarmActivitiesService } from '../src/farm-activities/farm-activities.service';
 import { HarvestsController } from '../src/harvests/harvests.controller';
 import { HarvestsService } from '../src/harvests/harvests.service';
+import { InventoryController } from '../src/inventory/inventory.controller';
+import { InventoryService } from '../src/inventory/inventory.service';
+import { InventoryTransactionsController } from '../src/inventory-transactions/inventory-transactions.controller';
+import { InventoryTransactionsService } from '../src/inventory-transactions/inventory-transactions.service';
 import { UsersController } from '../src/users/users.controller';
 import { UserRole } from '../src/users/entities/user-role.enum';
 import { UsersService } from '../src/users/users.service';
@@ -66,6 +70,21 @@ describe('Users and crops routes (e2e)', () => {
     update: jest.fn(),
     remove: jest.fn(),
   };
+  const inventoryService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findLowStock: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
+  const inventoryTransactionsService = {
+    create: jest.fn(),
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    update: jest.fn(),
+    remove: jest.fn(),
+  };
   const tokens = { admin: '', user: '' };
 
   beforeAll(async () => {
@@ -79,6 +98,8 @@ describe('Users and crops routes (e2e)', () => {
         CropsController,
         FarmActivitiesController,
         HarvestsController,
+        InventoryController,
+        InventoryTransactionsController,
       ],
       providers: [
         RolesGuard,
@@ -87,6 +108,11 @@ describe('Users and crops routes (e2e)', () => {
         { provide: CropsService, useValue: cropsService },
         { provide: FarmActivitiesService, useValue: activitiesService },
         { provide: HarvestsService, useValue: harvestsService },
+        { provide: InventoryService, useValue: inventoryService },
+        {
+          provide: InventoryTransactionsService,
+          useValue: inventoryTransactionsService,
+        },
         {
           provide: ConfigService,
           useValue: new ConfigService({ CORS_ORIGINS: '' }),
@@ -245,6 +271,86 @@ describe('Users and crops routes (e2e)', () => {
       AuthUser,
     ];
     expect(createCall[1].userId).toBe(7);
+  });
+
+  it('limits inventory management writes to Admins', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ itemName: 'Seeds', itemType: 'Supply', unit: 'kg' })
+      .expect(403);
+    expect(inventoryService.create).not.toHaveBeenCalled();
+
+    inventoryService.create.mockResolvedValue({
+      inventoryId: 3,
+      itemName: 'Seeds',
+      quantity: '0.000',
+      unit: 'kg',
+    } as never);
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory')
+      .set('Authorization', `Bearer ${tokens.admin}`)
+      .send({ itemName: 'Seeds', itemType: 'Supply', unit: 'kg' })
+      .expect(201)
+      .expect({
+        inventoryId: 3,
+        itemName: 'Seeds',
+        quantity: '0.000',
+        unit: 'kg',
+      });
+  });
+
+  it('rejects a client-supplied transaction owner and invalid quantity', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory-transactions')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({
+        inventoryId: 3,
+        transactionType: 'IN',
+        quantity: 2,
+        userId: 1,
+      })
+      .expect(400);
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory-transactions')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ inventoryId: 3, transactionType: 'OUT', quantity: 0 })
+      .expect(400);
+    expect(inventoryTransactionsService.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a transaction for the authenticated user', async () => {
+    inventoryTransactionsService.create.mockResolvedValue({
+      transactionId: 6,
+      inventoryId: 3,
+      userId: 7,
+      transactionType: 'IN',
+      quantity: '2.000',
+    } as never);
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory-transactions')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ inventoryId: 3, transactionType: 'IN', quantity: 2 })
+      .expect(201)
+      .expect({
+        transactionId: 6,
+        inventoryId: 3,
+        userId: 7,
+        transactionType: 'IN',
+        quantity: '2.000',
+      });
+    const createCall = inventoryTransactionsService.create.mock
+      .calls[0] as unknown as [Record<string, unknown>, AuthUser];
+    expect(createCall[1].userId).toBe(7);
+  });
+
+  it('restricts inventory transaction edits to Admins', async () => {
+    await request(app.getHttpServer())
+      .patch('/api/v1/inventory-transactions/6')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ quantity: 1 })
+      .expect(403);
+    expect(inventoryTransactionsService.update).not.toHaveBeenCalled();
   });
 
   afterAll(async () => {

@@ -138,6 +138,7 @@ describe('CropWise entity metadata', () => {
     ]);
     expect(dataSource.migrations.map((migration) => migration.name)).toEqual([
       'InitialCropWiseSchema1795608246754',
+      'InventoryTransactionType1795610000000',
     ]);
   });
 });

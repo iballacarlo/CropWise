@@ -77,6 +77,10 @@ describe('initial CropWise schema migration', () => {
       'Harvested',
       'Cancelled',
     ]);
+    expect(createdTables[4].findColumnByName('TransactionType')?.enum).toEqual([
+      'IN',
+      'OUT',
+    ]);
 
     const foreignKeys = createdTables.flatMap((table) => table.foreignKeys);
     expect(foreignKeys).toHaveLength(5);
