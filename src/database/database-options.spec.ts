@@ -21,6 +21,9 @@ describe('TypeORM database options', () => {
       migrationsRun: false,
     });
     expect(options.entities).toHaveLength(1);
+    const entityGlob = String(options.entities);
+    expect(entityGlob).toContain('src');
+    expect(entityGlob).toContain('*.entity');
     expect(options.migrations).toHaveLength(1);
   });
 
@@ -40,6 +43,7 @@ describe('TypeORM database options', () => {
       );
 
       expect(options.entities).toEqual([expect.stringContaining('dist')]);
+      expect(String(options.entities)).toContain('*.entity');
       expect(options.migrations).toEqual([expect.stringContaining('dist')]);
     } finally {
       if (oldEnvironment === undefined) {

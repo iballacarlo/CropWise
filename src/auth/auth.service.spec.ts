@@ -26,11 +26,14 @@ describe('AuthService', () => {
   });
 
   it('stores a password hash and always registers the standard role', async () => {
-    repository.findOne.mockResolvedValue(null);
-    repository.save.mockImplementation(async (user) => ({
-      ...user,
+    repository.findOne.mockResolvedValue(null as never);
+    repository.save.mockResolvedValue({
       userId: 7,
-    }));
+      fullName: 'Crop User',
+      email: 'person@example.com',
+      password: 'saved-hash',
+      role: UserRole.User,
+    } as never);
 
     const result = await service.register({
       fullName: '  Crop User  ',
@@ -54,7 +57,7 @@ describe('AuthService', () => {
   });
 
   it('rejects an existing email', async () => {
-    repository.findOne.mockResolvedValue({ userId: 1 });
+    repository.findOne.mockResolvedValue({ userId: 1 } as never);
 
     await expect(
       service.register({
@@ -77,9 +80,9 @@ describe('AuthService', () => {
     const builder = {
       addSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(user),
+      getOne: jest.fn().mockResolvedValue(user as never),
     };
-    repository.createQueryBuilder.mockReturnValue(builder);
+    repository.createQueryBuilder.mockReturnValue(builder as never);
 
     await expect(
       service.validateCredentials(' PERSON@EXAMPLE.COM ', 'a-strong-password'),

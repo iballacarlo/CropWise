@@ -13,9 +13,11 @@ export function createDatabaseOptions(
   config: DatabaseConfig,
   useCompiledFiles = process.env.NODE_ENV === 'production',
 ): DataSourceOptions {
-  const databaseDirectory = useCompiledFiles
-    ? join(process.cwd(), 'dist', 'database')
-    : join(process.cwd(), 'src', 'database');
+  const sourceDirectory = join(
+    process.cwd(),
+    useCompiledFiles ? 'dist' : 'src',
+  );
+  const databaseDirectory = join(sourceDirectory, 'database');
 
   return {
     type: 'mysql',
@@ -24,7 +26,7 @@ export function createDatabaseOptions(
     username: config.DB_USERNAME,
     password: config.DB_PASSWORD,
     database: config.DB_DATABASE,
-    entities: [join(databaseDirectory, '**', '*.entity{.ts,.js}')],
+    entities: [join(sourceDirectory, '**', '*.entity{.ts,.js}')],
     migrations: [join(databaseDirectory, 'migrations', '*{.ts,.js}')],
     migrationsTableName: 'typeorm_migrations',
     synchronize: false,

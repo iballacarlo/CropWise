@@ -99,14 +99,6 @@ describe('CropWise entity metadata', () => {
         DB_PASSWORD: 'test',
         DB_DATABASE: 'cropwise_db',
       }),
-      entities: [
-        User,
-        Crop,
-        FarmActivity,
-        Inventory,
-        InventoryTransaction,
-        Harvest,
-      ],
     });
     const buildMetadatas = (
       dataSource as unknown as { buildMetadatas: () => Promise<void> }
