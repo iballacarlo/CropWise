@@ -23,10 +23,7 @@ async function seedAdmin(): Promise<void> {
     );
   }
 
-  const dataSource = new DataSource({
-    ...createDatabaseOptions(config, true),
-    entities: [User],
-  });
+  const dataSource = new DataSource(createDatabaseOptions(config, true));
   await dataSource.initialize();
   try {
     const users = dataSource.getRepository(User);
