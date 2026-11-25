@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 2 configuration implemented; live MySQL connection not yet verified.** TypeORM and the MySQL driver are configured for the dedicated `cropwise_db` database. Entities, authentication, roles and business CRUD will be added in later approved phases.
+Current status: **Phase 3 entities and initial migration implemented; live MySQL connection and migration application not yet verified.** TypeORM is configured for the dedicated `cropwise_db` database. Authentication and business CRUD will be added in later approved phases.
 
 ## Local setup
 
@@ -18,6 +18,7 @@ Start MySQL in XAMPP, then edit `.env` and set your own `DB_USERNAME` and `DB_PA
 ```powershell
 npm.cmd run db:create
 npm.cmd run db:check
+npm.cmd run db:migration:run
 npm.cmd run start:dev
 ```
 
@@ -60,7 +61,14 @@ src/
   config/environment.spec.ts    Configuration tests
   database/
     data-source.ts              TypeORM CLI data source and migration discovery
-    database-options.ts         Shared MySQL connection and migration options
+    database-options.ts         Shared MySQL connection, entities and migrations
+    migrations/                 Versioned schema changes
+  users/entities/               User entity and role enum
+  crops/entities/               Crop entity and status enum
+  farm-activities/entities/     Farm activity entity
+  inventory/entities/           Inventory entity
+  inventory-transactions/entities/ Inventory transaction entity and enum
+  harvests/entities/            Harvest entity
   app.module.ts                 Application module, global config and TypeORM
   app.controller.ts             Existing starter endpoint
   app.service.ts                Existing starter service
@@ -74,7 +82,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-Feature folders for Auth, Users, Crops, Farm Activities, Inventory, Inventory Transactions and Harvests will be added in the approved phases. No empty feature modules have been added.
+The six required entities are implemented in their domain folders. Auth and business controllers, services and feature modules will be added in the approved phases. No empty feature modules have been added.
 
 ## Database commands
 
@@ -87,7 +95,7 @@ npm.cmd run db:migration:revert
 npm.cmd run db:migration:run:prod
 ```
 
-TypeORM uses `synchronize: false` and does not automatically run migrations on startup. Migration generation/run/revert commands are configured; there are no entity migrations yet because those belong to Phase 3.
+TypeORM uses `synchronize: false` and does not automatically run migrations on startup. The initial migration creates all six tables. Run it only after `db:check` succeeds. Reverting this migration drops those six tables and their data.
 
 ## Checks
 
@@ -102,10 +110,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passes build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. The live DB check remains pending because XAMPP MySQL was unavailable. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passes build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. Entity metadata and migration definitions are exercised without a MySQL connection. The live DB check and applying the migration remain pending because XAMPP MySQL is unavailable. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
 
-## Phase 2 status and limitations
+## Phase 3 status and limitations
 
-The TypeORM configuration, migration CLI data source, database creation command and read-only connection check are in place. No `.env` exists in this checkout and XAMPP MySQL was not listening on port `3306` during implementation, so `cropwise_db` has not been created and a live database connection has not been verified. Add your local credentials to `.env`, start XAMPP MySQL, then run `npm run db:create` and `npm run db:check`. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
+The six entities, their relationships and the initial migration are implemented. No `.env` exists in this checkout and XAMPP MySQL was not listening on port `3306` during implementation, so `cropwise_db` has not been created and the migration has not been applied. Add your local credentials to `.env`, start XAMPP MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
 All later features and final project deliverables remain pending their respective phase approvals. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), and [CORS](https://docs.nestjs.com/security/cors) documentation.

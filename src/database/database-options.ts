@@ -24,7 +24,7 @@ export function createDatabaseOptions(
     username: config.DB_USERNAME,
     password: config.DB_PASSWORD,
     database: config.DB_DATABASE,
-    entities: [join(databaseDirectory, 'entities', '**', '*.entity{.ts,.js}')],
+    entities: [join(databaseDirectory, '**', '*.entity{.ts,.js}')],
     migrations: [join(databaseDirectory, 'migrations', '*{.ts,.js}')],
     migrationsTableName: 'typeorm_migrations',
     synchronize: false,
