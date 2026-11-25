@@ -2,7 +2,7 @@
 
 CropWise: Crop Production and Farm Inventory Management System is a college project using a NestJS REST API. The planned system covers crops, farm activities, harvests, inventory and inventory transactions.
 
-Current status: **Phase 4 authentication implemented.** Local MySQL schema from Phase 3 contains the user table needed for registration and sign-in. Crop and inventory CRUD are subsequent phases.
+Current status: **Phase 5 user and crop CRUD implemented.** User management is Admin-only; crop records are scoped to their authenticated owner, with Admin access across owners.
 
 ## Local setup
 
@@ -48,6 +48,25 @@ JWT logout is client-side: discard the token. This phase does not keep sessions,
 
 For the first administrator, set `INITIAL_ADMIN_FULL_NAME`, `INITIAL_ADMIN_EMAIL`, and `INITIAL_ADMIN_PASSWORD` in your private `.env`, then run `npm.cmd run seed:admin`. This creates an Admin only if that email is unused; it never promotes or changes an existing account. Clear those optional seed values after setup.
 
+## User and crop endpoints
+
+All `/users` routes require a JWT for an Admin. These routes can create, list, view, update a user's name, email or role, and delete another user. Admin-created passwords are hashed; user responses never include password data. An Admin cannot change their own role or delete their own account, and deleting a user with related records returns `409 Conflict`.
+
+| Method | Endpoint | Access |
+| --- | --- | --- |
+| `POST` | `/api/v1/users` | Admin |
+| `GET` | `/api/v1/users` | Admin |
+| `GET` | `/api/v1/users/:id` | Admin |
+| `PATCH` | `/api/v1/users/:id` | Admin |
+| `DELETE` | `/api/v1/users/:id` | Admin |
+| `POST` | `/api/v1/crops` | Any signed-in user |
+| `GET` | `/api/v1/crops` | Own crops; Admin sees all |
+| `GET` | `/api/v1/crops/:id` | Owner or Admin |
+| `PATCH` | `/api/v1/crops/:id` | Owner or Admin |
+| `DELETE` | `/api/v1/crops/:id` | Owner or Admin |
+
+Crop fields are `cropName`, `cropType`, `plantingDate`, optional `expectedHarvestDate`, and optional `cropStatus`. The API derives crop ownership from the JWT; `userId` in a request is rejected. Expected harvest date cannot be earlier than planting date. A crop with related activities or harvests cannot be deleted and returns `409 Conflict`. Missing or out-of-scope crops return `404`.
+
 ## Configuration
 
 | Variable       | Behavior                                                                     |
@@ -82,6 +101,8 @@ src/
     database-options.ts         Shared MySQL connection, entities and migrations
     migrations/                 Versioned schema changes
   auth/                         Registration, login, JWT strategy, guard and profile
+  users/                        Admin user CRUD and role-based access
+  crops/                        Crop CRUD with per-owner access checks
   scripts/seed-admin.ts         Optional one-time initial administrator command
   users/entities/               User entity and role enum
   crops/entities/               Crop entity and status enum
@@ -102,7 +123,7 @@ test/
 .env.example                    Non-secret environment template
 ```
 
-The six required entities are implemented in their domain folders. Authentication is implemented; business CRUD controllers and services remain for later phases.
+All six required entities are implemented in their domain folders. Authentication and the Phase 5 user and crop CRUD modules are implemented. Farm activity, harvest, and inventory modules remain for later phases.
 
 ## Database commands
 
@@ -130,10 +151,10 @@ npm.cmd run db:check
 
 The database tests use test-only environment defaults and skip connecting to MySQL. `npm run db:check` requires your local `.env` and a running MySQL server. Jest uses Node's experimental VM modules to support the installed NestJS 12 ESM packages; its experimental warning is expected.
 
-Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 build, lint, and TypeScript checks pass. The HTTP tests cover the API prefix, DTO transformation and validation, unknown properties, CORS allow/deny behavior and preflight, JSON API 404 responses, and generic 500 responses. Test probe endpoints exist only in the test module.
+Phase 1 validation recorded 14 unit tests and 10 HTTP tests passing, along with build, lint, TypeScript and a local HTTP smoke check. Phase 2 validation passed build, lint, TypeScript checking, 18 unit tests, 10 HTTP tests, script syntax checks, and loading the compiled TypeORM data source configuration without connecting. Phase 3 validation passed build, lint, TypeScript checking, 24 unit tests and 10 HTTP tests. The migration was applied locally and verified to create six required tables and five foreign keys; the Nest dev server connected and `GET /api/v1` returned HTTP 200. Phase 4 authentication checks passed. Phase 5 build, lint, TypeScript, unit, and HTTP e2e checks pass. The tests cover authentication boundaries, Admin role checks, owner-scoped crops, request validation, and existing global HTTP behavior. Test probe endpoints exist only in the test module.
 
 ## Phase 3 status and limitations
 
 The six entities, their relationships and the initial migration are implemented and applied to the dedicated local `cropwise_db`. The database contains the six project tables, five foreign keys and the TypeORM migration tracking table. The local `.env` is Git-ignored. On another machine, configure its own `.env`, start MySQL, then run `npm run db:create`, `npm run db:check` and `npm run db:migration:run`. Verify the six tables and foreign keys in phpMyAdmin. The application intentionally refuses to start in development or production if required DB settings are missing. Test mode skips the database module so HTTP configuration tests do not need MySQL. Existing databases remain untouched.
 
-Later business features and final project deliverables remain pending their respective phase approvals. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
+Farm activity, harvest, inventory, inventory transactions, full API documentation, and final project deliverables remain pending their respective phases. Configuration follows the official NestJS [TypeORM](https://docs.nestjs.com/data/typeorm), [configuration](https://docs.nestjs.com/techniques/configuration), [validation](https://docs.nestjs.com/techniques/validation), [Passport](https://docs.nestjs.com/recipes/passport), and [authentication](https://docs.nestjs.com/security/authentication) documentation.
