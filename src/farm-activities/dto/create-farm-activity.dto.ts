@@ -18,7 +18,7 @@ export class CreateFarmActivityDto {
 
   @IsString()
   @MinLength(1)
-  @MaxLength(150)
+  @MaxLength(100)
   @Matches(/\S/)
   activityName!: string;
 

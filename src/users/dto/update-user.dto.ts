@@ -13,13 +13,13 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(2)
-  @MaxLength(150)
+  @MaxLength(100)
   @Matches(/\S/)
   fullName?: string;
 
   @IsOptional()
   @IsEmail()
-  @MaxLength(254)
+  @MaxLength(100)
   email?: string;
 
   @IsOptional()

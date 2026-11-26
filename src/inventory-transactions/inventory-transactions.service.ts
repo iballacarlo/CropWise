@@ -16,7 +16,7 @@ import { UpdateInventoryTransactionDto } from './dto/update-inventory-transactio
 import { InventoryTransaction } from './entities/inventory-transaction.entity';
 import { InventoryTransactionType } from './entities/inventory-transaction-type.enum';
 
-const MAX_STOCK_UNITS = 999_999_999_999n;
+const MAX_STOCK_UNITS = 9_999_999_999n;
 
 @Injectable()
 export class InventoryTransactionsService {
@@ -30,7 +30,7 @@ export class InventoryTransactionsService {
     input: CreateInventoryTransactionDto,
     actor: AuthUser,
   ): Promise<InventoryTransaction> {
-    const quantity = toPositiveStockUnits(input.quantity);
+    const quantity = toStockUnits(input.quantity);
     return this.dataSource.transaction(async (manager) => {
       const item = await lockInventory(manager, input.inventoryId);
       item.quantity = fromStockUnits(
@@ -100,7 +100,7 @@ export class InventoryTransactionsService {
       const nextQuantity =
         input.quantity === undefined
           ? previousQuantity
-          : toPositiveStockUnits(input.quantity);
+          : toStockUnits(input.quantity);
       const nextType = input.transactionType ?? transaction.transactionType;
       const restoredStock = applyMovement(
         toStockUnits(item.quantity),
@@ -191,15 +191,15 @@ async function lockInventory(
 }
 
 function toStockUnits(quantity: string | number): bigint {
-  const match = /^(\d+)(?:\.(\d{1,3}))?$/.exec(String(quantity));
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(String(quantity));
   if (!match) {
     throw new BadRequestException(
-      'Quantity must be a nonnegative number with at most three decimal places.',
+      'Quantity must be a nonnegative number with at most two decimal places.',
     );
   }
   const whole = BigInt(match[1]);
-  const fraction = BigInt((match[2] ?? '').padEnd(3, '0') || '0');
-  const units = whole * 1000n + fraction;
+  const fraction = BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+  const units = whole * 100n + fraction;
   if (units > MAX_STOCK_UNITS) {
     throw new BadRequestException(
       'Quantity exceeds the supported inventory range.',
@@ -208,19 +208,9 @@ function toStockUnits(quantity: string | number): bigint {
   return units;
 }
 
-function toPositiveStockUnits(quantity: string | number): bigint {
-  const units = toStockUnits(quantity);
-  if (units === 0n) {
-    throw new BadRequestException(
-      'Transaction quantity must be greater than zero.',
-    );
-  }
-  return units;
-}
-
 function fromStockUnits(units: bigint): string {
-  const whole = units / 1000n;
-  const fraction = String(units % 1000n).padStart(3, '0');
+  const whole = units / 100n;
+  const fraction = String(units % 100n).padStart(2, '0');
   return `${whole}.${fraction}`;
 }
 

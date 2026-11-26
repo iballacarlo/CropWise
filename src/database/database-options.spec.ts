@@ -17,6 +17,7 @@ describe('TypeORM database options', () => {
       username: 'cropwise_user',
       database: 'cropwise_db',
       migrationsTableName: 'typeorm_migrations',
+      migrationsTransactionMode: 'each',
       synchronize: false,
       migrationsRun: false,
     });

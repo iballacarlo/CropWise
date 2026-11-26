@@ -415,7 +415,7 @@
             "description": "Expected HTTP 201.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"fullName\": \"Postman Managed User\",\n  \"email\": \"{{managedUserEmail}}\",\n  \"password\": \"{{userPassword}}\",\n  \"role\": \"User\"\n}",
+              "raw": "{\n  \"fullName\": \"Postman Managed User\",\n  \"email\": \"{{managedUserEmail}}\",\n  \"password\": \"{{userPassword}}\",\n  \"role\": \"Farmer\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1245,7 +1245,7 @@
           ]
         },
         {
-          "name": "Reject zero quantity",
+          "name": "Create zero transaction",
           "request": {
             "method": "POST",
             "header": [
@@ -1255,7 +1255,7 @@
               }
             ],
             "url": "{{baseUrl}}/inventory-transactions",
-            "description": "Expected HTTP 400.",
+            "description": "Expected HTTP 201.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"inventoryId\": \"{{inventoryId}}\",\n  \"transactionType\": \"IN\",\n  \"quantity\": 0\n}",
@@ -1272,7 +1272,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Returns HTTP 400', () => pm.response.to.have.status(400));"
+                  "pm.test('Returns HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.environment.set('zeroTransactionId', pm.response.json()['transactionId']);"
                 ]
               }
             }
@@ -1449,7 +1450,7 @@
           ]
         },
         {
-          "name": "Reject User on Admin route",
+          "name": "Reject Farmer on Admin route",
           "request": {
             "method": "GET",
             "header": [],
@@ -1479,7 +1480,7 @@
           ]
         },
         {
-          "name": "Reject User inventory write",
+          "name": "Reject Farmer inventory write",
           "request": {
             "method": "POST",
             "header": [
@@ -1601,6 +1602,36 @@
     {
       "name": "Cleanup",
       "item": [
+        {
+          "name": "Delete zero transaction (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/inventory-transactions/{{zeroTransactionId}}",
+            "description": "Expected HTTP 200.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
         {
           "name": "Delete inventory item (Admin)",
           "request": {

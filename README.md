@@ -1,6 +1,6 @@
 # CropWise Backend
 
-CropWise is a backend API for managing crops, farm activities, harvests, users, and farm inventory. It supports JWT authentication and role-based access for Admin and User accounts.
+CropWise is a backend API for managing crops, farm activities, harvests, users, and farm inventory. It supports JWT authentication and role-based access for Admin and Farmer accounts.
 
 ## Tech stack
 

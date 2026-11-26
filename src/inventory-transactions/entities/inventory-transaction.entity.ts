@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   Entity,
   Index,
   JoinColumn,
@@ -12,28 +13,32 @@ import type { User } from '../../users/entities/user.entity';
 import { InventoryTransactionType } from './inventory-transaction-type.enum';
 
 @Entity({ name: 'inventory_transactions' })
+@Check(
+  'CHK_InventoryTransactions_TransactionType',
+  '`TransactionType` IN (\'IN\', \'OUT\')',
+)
+@Check('CHK_InventoryTransactions_Quantity', '`Quantity` >= 0')
 @Index('IDX_inventory_transactions_InventoryID', ['inventoryId'])
 @Index('IDX_inventory_transactions_UserID', ['userId'])
 export class InventoryTransaction {
   @PrimaryGeneratedColumn({
     name: 'TransactionID',
     type: 'int',
-    unsigned: true,
   })
   transactionId!: number;
 
   @Column({
     name: 'TransactionType',
-    type: 'enum',
-    enum: InventoryTransactionType,
+    type: 'varchar',
+    length: 20,
   })
   transactionType!: InventoryTransactionType;
 
   @Column({
     name: 'Quantity',
     type: 'decimal',
-    precision: 12,
-    scale: 3,
+    precision: 10,
+    scale: 2,
   })
   quantity!: string;
 
@@ -44,7 +49,7 @@ export class InventoryTransaction {
   })
   transactionDate!: Date;
 
-  @Column({ name: 'InventoryID', type: 'int', unsigned: true })
+  @Column({ name: 'InventoryID', type: 'int' })
   inventoryId!: number;
 
   @ManyToOne('Inventory', 'transactions', {
@@ -59,7 +64,7 @@ export class InventoryTransaction {
   })
   inventory!: Relation<Inventory>;
 
-  @Column({ name: 'UserID', type: 'int', unsigned: true })
+  @Column({ name: 'UserID', type: 'int' })
   userId!: number;
 
   @ManyToOne('User', 'inventoryTransactions', {

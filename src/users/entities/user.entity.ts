@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   Entity,
   Index,
   OneToMany,
@@ -11,15 +12,16 @@ import type { InventoryTransaction } from '../../inventory-transactions/entities
 import { UserRole } from './user-role.enum';
 
 @Entity({ name: 'users' })
+@Check('CHK_Users_Role', '`Role` IN (\'Farmer\', \'Admin\')')
 @Index('UQ_users_Email', ['email'], { unique: true })
 export class User {
-  @PrimaryGeneratedColumn({ name: 'UserID', type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ name: 'UserID', type: 'int' })
   userId!: number;
 
-  @Column({ name: 'FullName', type: 'varchar', length: 150 })
+  @Column({ name: 'FullName', type: 'varchar', length: 100 })
   fullName!: string;
 
-  @Column({ name: 'Email', type: 'varchar', length: 254 })
+  @Column({ name: 'Email', type: 'varchar', length: 100 })
   email!: string;
 
   @Column({ name: 'Password', type: 'varchar', length: 255, select: false })
@@ -27,9 +29,9 @@ export class User {
 
   @Column({
     name: 'Role',
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.User,
+    type: 'varchar',
+    length: 20,
+    default: UserRole.Farmer,
   })
   role!: UserRole;
 

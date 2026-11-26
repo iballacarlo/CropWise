@@ -132,14 +132,14 @@ describe('Users and crops routes (e2e)', () => {
       userId: 7,
       fullName: 'Test User',
       email: 'user@example.com',
-      role: UserRole.User,
+      role: UserRole.Farmer,
     });
     tokens.expired = jwt.sign(
       {
         userId: 7,
         fullName: 'Test User',
         email: 'user@example.com',
-        role: UserRole.User,
+        role: UserRole.Farmer,
       },
       { expiresIn: -1 },
     );
@@ -181,7 +181,7 @@ describe('Users and crops routes (e2e)', () => {
         userId: 7,
         fullName: 'Test User',
         email: 'user@example.com',
-        role: UserRole.User,
+        role: UserRole.Farmer,
       },
     ] as never);
     await request(app.getHttpServer())
@@ -193,7 +193,7 @@ describe('Users and crops routes (e2e)', () => {
           userId: 7,
           fullName: 'Test User',
           email: 'user@example.com',
-          role: UserRole.User,
+          role: UserRole.Farmer,
         },
       ]);
   });
@@ -255,7 +255,12 @@ describe('Users and crops routes (e2e)', () => {
     await request(app.getHttpServer()).get('/api/v1/harvests').expect(401);
   });
 
-  it('rejects a nonpositive harvest quantity', async () => {
+  it('accepts a zero harvest quantity', async () => {
+    harvestsService.create.mockResolvedValue({
+      harvestId: 10,
+      cropId: 8,
+      quantityHarvested: '0.00',
+    } as never);
     await request(app.getHttpServer())
       .post('/api/v1/harvests')
       .set('Authorization', `Bearer ${tokens.user}`)
@@ -265,8 +270,9 @@ describe('Users and crops routes (e2e)', () => {
         quantityHarvested: 0,
         unit: 'kg',
       })
-      .expect(400);
-    expect(harvestsService.create).not.toHaveBeenCalled();
+      .expect(201)
+      .expect({ harvestId: 10, cropId: 8, quantityHarvested: '0.00' });
+    expect(harvestsService.create).toHaveBeenCalled();
   });
 
   it('rejects moving an activity or harvest to a different crop on update', async () => {
@@ -318,7 +324,7 @@ describe('Users and crops routes (e2e)', () => {
     inventoryService.create.mockResolvedValue({
       inventoryId: 3,
       itemName: 'Seeds',
-      quantity: '0.000',
+      quantity: '0.00',
       unit: 'kg',
     } as never);
     await request(app.getHttpServer())
@@ -329,12 +335,12 @@ describe('Users and crops routes (e2e)', () => {
       .expect({
         inventoryId: 3,
         itemName: 'Seeds',
-        quantity: '0.000',
+        quantity: '0.00',
         unit: 'kg',
       });
   });
 
-  it('rejects a client-supplied transaction owner and invalid quantity', async () => {
+  it('rejects a client-supplied transaction owner and excess decimal places', async () => {
     await request(app.getHttpServer())
       .post('/api/v1/inventory-transactions')
       .set('Authorization', `Bearer ${tokens.user}`)
@@ -348,7 +354,7 @@ describe('Users and crops routes (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/inventory-transactions')
       .set('Authorization', `Bearer ${tokens.user}`)
-      .send({ inventoryId: 3, transactionType: 'OUT', quantity: 0 })
+      .send({ inventoryId: 3, transactionType: 'OUT', quantity: 0.001 })
       .expect(400);
     await request(app.getHttpServer())
       .post('/api/v1/inventory-transactions')
@@ -363,13 +369,35 @@ describe('Users and crops routes (e2e)', () => {
     expect(inventoryTransactionsService.create).not.toHaveBeenCalled();
   });
 
+  it('accepts a zero-quantity inventory transaction', async () => {
+    inventoryTransactionsService.create.mockResolvedValue({
+      transactionId: 8,
+      inventoryId: 3,
+      userId: 7,
+      transactionType: 'IN',
+      quantity: '0.00',
+    } as never);
+    await request(app.getHttpServer())
+      .post('/api/v1/inventory-transactions')
+      .set('Authorization', `Bearer ${tokens.user}`)
+      .send({ inventoryId: 3, transactionType: 'IN', quantity: 0 })
+      .expect(201)
+      .expect({
+        transactionId: 8,
+        inventoryId: 3,
+        userId: 7,
+        transactionType: 'IN',
+        quantity: '0.00',
+      });
+  });
+
   it('creates a transaction for the authenticated user', async () => {
     inventoryTransactionsService.create.mockResolvedValue({
       transactionId: 6,
       inventoryId: 3,
       userId: 7,
       transactionType: 'IN',
-      quantity: '2.000',
+      quantity: '2.00',
     } as never);
     await request(app.getHttpServer())
       .post('/api/v1/inventory-transactions')
@@ -386,7 +414,7 @@ describe('Users and crops routes (e2e)', () => {
         inventoryId: 3,
         userId: 7,
         transactionType: 'IN',
-        quantity: '2.000',
+      quantity: '2.00',
       });
     const createCall = inventoryTransactionsService.create.mock
       .calls[0] as unknown as [Record<string, unknown>, AuthUser];

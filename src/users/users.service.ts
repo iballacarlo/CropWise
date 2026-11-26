@@ -32,7 +32,7 @@ export class UsersService {
       fullName: input.fullName.trim(),
       email,
       password: await hash(input.password, PASSWORD_ROUNDS),
-      role: input.role ?? UserRole.User,
+      role: input.role ?? UserRole.Farmer,
     });
     try {
       return toAuthUser(await this.users.save(user));

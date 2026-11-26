@@ -50,7 +50,7 @@ describe('CropWise entity metadata', () => {
         (index) => index.target === User && index.name === 'UQ_users_Email',
       )?.unique,
     ).toBe(true);
-    expect(UserRole).toEqual({ Admin: 'Admin', User: 'User' });
+    expect(UserRole).toEqual({ Admin: 'Admin', Farmer: 'Farmer' });
     expect(CropStatus).toEqual({
       Planned: 'Planned',
       Growing: 'Growing',
@@ -58,6 +58,33 @@ describe('CropWise entity metadata', () => {
       Harvested: 'Harvested',
       Cancelled: 'Cancelled',
     });
+    expect(
+      storage.columns.find(
+        (column) => column.target === User && column.propertyName === 'role',
+      )?.options,
+    ).toMatchObject({ type: 'varchar', length: 20 });
+    expect(
+      storage.columns.find(
+        (column) => column.target === Crop && column.propertyName === 'cropStatus',
+      )?.options,
+    ).toMatchObject({ type: 'varchar', length: 20 });
+    expect(
+      storage.columns.find(
+        (column) =>
+          column.target === InventoryTransaction &&
+          column.propertyName === 'transactionType',
+      )?.options,
+    ).toMatchObject({ type: 'varchar', length: 20 });
+    expect(
+      storage.checks.some(
+        (check) => check.target === User && check.name === 'CHK_Users_Role',
+      ),
+    ).toBe(true);
+    expect(
+      storage.checks.some(
+        (check) => check.target === Inventory && check.name === 'CHK_Inventory_Quantity',
+      ),
+    ).toBe(true);
   });
 
   it('declares the requested one-to-many and many-to-one relationships', () => {
@@ -139,6 +166,8 @@ describe('CropWise entity metadata', () => {
     expect(dataSource.migrations.map((migration) => migration.name)).toEqual([
       'InitialCropWiseSchema1795608246754',
       'InventoryTransactionType1795610000000',
+      'Lab04SchemaAlignment1795700000000',
+      'SnakeCaseTableNames1795800000000',
     ]);
   });
 });

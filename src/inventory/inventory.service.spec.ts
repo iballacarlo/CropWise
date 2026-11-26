@@ -22,9 +22,9 @@ describe('InventoryService', () => {
       inventoryId: 3,
       itemName: 'Seeds',
       itemType: 'Supply',
-      quantity: '0.000',
+      quantity: '0.00',
       unit: 'kg',
-      reorderLevel: '2.000',
+      reorderLevel: '2.00',
     } as Inventory;
     inventory = {
       create: jest.fn((item) => item),
@@ -68,8 +68,8 @@ describe('InventoryService', () => {
       reorderLevel: 1.5,
     });
     expect(inventory.create.mock.calls[0][0]).toMatchObject({
-      quantity: '0.000',
-      reorderLevel: '1.500',
+      quantity: '0.00',
+      reorderLevel: '1.50',
     });
   });
 
@@ -120,7 +120,7 @@ describe('InventoryService', () => {
       service.update(3, { itemName: 'Updated seeds' }),
     ).resolves.toMatchObject({ itemName: 'Updated seeds' });
     expect(inventory.save.mock.calls[0][0]).toMatchObject({
-      quantity: '0.000',
+      quantity: '0.00',
     });
   });
 });

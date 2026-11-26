@@ -25,7 +25,7 @@ describe('InventoryTransactionsService', () => {
     userId: 17,
     fullName: 'Farm User',
     email: 'user@example.com',
-    role: UserRole.User,
+    role: UserRole.Farmer,
   };
 
   beforeEach(() => {
@@ -33,14 +33,14 @@ describe('InventoryTransactionsService', () => {
       inventoryId: 3,
       itemName: 'Seeds',
       itemType: 'Supply',
-      quantity: '4.000',
+      quantity: '4.00',
       unit: 'kg',
-      reorderLevel: '1.000',
+      reorderLevel: '1.00',
     } as Inventory;
     transaction = {
       transactionId: 9,
       transactionType: TxType.In,
-      quantity: '5.000',
+      quantity: '5.00',
       transactionDate: new Date('2026-07-01T12:00:00.000Z'),
       inventoryId: 3,
       userId: user.userId,
@@ -82,19 +82,34 @@ describe('InventoryTransactionsService', () => {
     );
 
     expect(itemRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ quantity: '6.500' }),
+      expect.objectContaining({ quantity: '6.50' }),
     );
     expect(transactionRepository.create.mock.calls[0][0]).toMatchObject({
       inventoryId: 3,
       userId: user.userId,
       transactionType: TxType.In,
-      quantity: '2.500',
+      quantity: '2.50',
     });
     expect(created).toMatchObject({ userId: user.userId });
   });
 
+  it('accepts a zero-quantity transaction without changing stock', async () => {
+    const created = await service.create(
+      { inventoryId: 3, transactionType: TxType.In, quantity: 0 },
+      user,
+    );
+
+    expect(itemRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ quantity: '4.00' }),
+    );
+    expect(transactionRepository.create.mock.calls[0][0]).toMatchObject({
+      quantity: '0.00',
+    });
+    expect(created).toMatchObject({ quantity: '0.00' });
+  });
+
   it('rejects an OUT transaction that exceeds available stock', async () => {
-    item.quantity = '0.500';
+    item.quantity = '0.50';
 
     await expect(
       service.create(
@@ -111,20 +126,20 @@ describe('InventoryTransactionsService', () => {
   });
 
   it('reverses the prior movement before applying a transaction update', async () => {
-    item.quantity = '7.500';
+    item.quantity = '7.50';
 
     await service.update(9, { quantity: 6 });
 
     expect(itemRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ quantity: '8.500' }),
+      expect.objectContaining({ quantity: '8.50' }),
     );
     expect(transactionRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ quantity: '6.000' }),
+      expect.objectContaining({ quantity: '6.00' }),
     );
   });
 
   it('will not reverse an IN transaction if the stock has already been consumed', async () => {
-    item.quantity = '2.000';
+    item.quantity = '2.00';
 
     await expect(service.remove(9)).rejects.toBeInstanceOf(ConflictException);
     expect(itemRepository.save).not.toHaveBeenCalled();
@@ -133,13 +148,13 @@ describe('InventoryTransactionsService', () => {
 
   it('reverses an OUT transaction when it is deleted', async () => {
     transaction.transactionType = TxType.Out;
-    transaction.quantity = '1.250';
-    item.quantity = '2.000';
+    transaction.quantity = '1.25';
+    item.quantity = '2.00';
 
     await service.remove(9);
 
     expect(itemRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ quantity: '3.250' }),
+      expect.objectContaining({ quantity: '3.25' }),
     );
     expect(transactionRepository.remove).toHaveBeenCalledWith(transaction);
   });

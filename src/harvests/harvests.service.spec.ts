@@ -20,7 +20,7 @@ describe('HarvestsService', () => {
     userId: 7,
     fullName: 'Crop User',
     email: 'user@example.com',
-    role: UserRole.User,
+    role: UserRole.Farmer,
   };
 
   beforeEach(() => {
@@ -54,7 +54,7 @@ describe('HarvestsService', () => {
     expect(cropAccess.findOne).toHaveBeenCalledWith(5, user);
     expect(repository.create.mock.calls[0][0]).toMatchObject({
       cropId: 5,
-      quantityHarvested: '2.500',
+      quantityHarvested: '2.50',
       harvestDate: '2026-08-10',
       unit: 'kg',
       notes: null,

@@ -187,7 +187,7 @@ const collection = {
           fullName: 'Postman Managed User',
           email: '{{managedUserEmail}}',
           password: '{{userPassword}}',
-          role: 'User',
+          role: 'Farmer',
         },
         generateEmail: 'managedUserEmail',
         saveId: 'managedUserId',
@@ -302,12 +302,14 @@ const collection = {
       }),
       req('List transactions', 'GET', '/inventory-transactions', 200),
       req('Get transaction', 'GET', '/inventory-transactions/{{transactionId}}', 200),
-      req('Reject zero quantity', 'POST', '/inventory-transactions', 400, {
+      req('Create zero transaction', 'POST', '/inventory-transactions', 201, {
         body: {
           inventoryId: '{{inventoryId}}',
           transactionType: 'IN',
           quantity: 0,
         },
+        saveId: 'zeroTransactionId',
+        idField: 'transactionId',
       }),
       req('Reject old transaction date format', 'POST', '/inventory-transactions', 400, {
         body: {
@@ -336,11 +338,11 @@ const collection = {
     ]),
     folder('Authorization checks', null, [
       req('Reject missing token', 'GET', '/crops', 401, { auth: false }),
-      req('Reject User on Admin route', 'GET', '/users', 403, {
+      req('Reject Farmer on Admin route', 'GET', '/users', 403, {
         auth: true,
         token: 'userToken',
       }),
-      req('Reject User inventory write', 'POST', '/inventory', 403, {
+      req('Reject Farmer inventory write', 'POST', '/inventory', 403, {
         auth: true,
         token: 'userToken',
         body: { itemName: 'Forbidden', itemType: 'Supply', unit: 'kg' },
@@ -360,6 +362,10 @@ const collection = {
       }),
     ]),
     folder('Cleanup', null, [
+      req('Delete zero transaction (Admin)', 'DELETE', '/inventory-transactions/{{zeroTransactionId}}', 200, {
+        auth: true,
+        token: 'adminToken',
+      }),
       req('Delete inventory item (Admin)', 'DELETE', '/inventory/{{inventoryId}}', 200, {
         auth: true,
         token: 'adminToken',
@@ -399,6 +405,7 @@ const environment = {
     ['harvestId', ''],
     ['inventoryId', ''],
     ['transactionId', ''],
+    ['zeroTransactionId', ''],
   ].map(([key, value]) => ({ key, value, type: 'default', enabled: true })),
   _postman_variable_scope: 'environment',
   _postman_exported_using: 'CropWise backend project',

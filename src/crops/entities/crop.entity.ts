@@ -1,5 +1,6 @@
 import {
   Column,
+  Check,
   Entity,
   Index,
   JoinColumn,
@@ -14,15 +15,19 @@ import type { User } from '../../users/entities/user.entity';
 import { CropStatus } from './crop-status.enum';
 
 @Entity({ name: 'crops' })
+@Check(
+  'CHK_Crops_CropStatus',
+  '`CropStatus` IN (\'Planned\', \'Growing\', \'ReadyForHarvest\', \'Harvested\', \'Cancelled\')',
+)
 @Index('IDX_crops_UserID', ['userId'])
 export class Crop {
-  @PrimaryGeneratedColumn({ name: 'CropID', type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ name: 'CropID', type: 'int' })
   cropId!: number;
 
   @Column({ name: 'CropName', type: 'varchar', length: 100 })
   cropName!: string;
 
-  @Column({ name: 'CropType', type: 'varchar', length: 100 })
+  @Column({ name: 'CropType', type: 'varchar', length: 50 })
   cropType!: string;
 
   @Column({ name: 'PlantingDate', type: 'date' })
@@ -37,13 +42,13 @@ export class Crop {
 
   @Column({
     name: 'CropStatus',
-    type: 'enum',
-    enum: CropStatus,
+    type: 'varchar',
+    length: 20,
     default: CropStatus.Planned,
   })
   cropStatus!: CropStatus;
 
-  @Column({ name: 'UserID', type: 'int', unsigned: true })
+  @Column({ name: 'UserID', type: 'int' })
   userId!: number;
 
   @ManyToOne('User', 'crops', {

@@ -35,7 +35,7 @@ describe('RolesGuard', () => {
   });
 
   it('rejects an account without the required role', () => {
-    expect(guardFor(UserRole.User, [UserRole.Admin])).toBe(false);
+    expect(guardFor(UserRole.Farmer, [UserRole.Admin])).toBe(false);
   });
 
   it('allows routes without role metadata', () => {

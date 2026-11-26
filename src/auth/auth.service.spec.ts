@@ -32,7 +32,7 @@ describe('AuthService', () => {
       fullName: 'Crop User',
       email: 'person@example.com',
       password: 'saved-hash',
-      role: UserRole.User,
+      role: UserRole.Farmer,
     } as never);
 
     const result = await service.register({
@@ -46,12 +46,12 @@ describe('AuthService', () => {
     expect(saved.email).toBe('person@example.com');
     expect(saved.password).not.toBe('a-strong-password');
     expect(await compare('a-strong-password', saved.password)).toBe(true);
-    expect(saved.role).toBe(UserRole.User);
+    expect(saved.role).toBe(UserRole.Farmer);
     expect(result).toEqual({
       userId: 7,
       fullName: 'Crop User',
       email: 'person@example.com',
-      role: UserRole.User,
+      role: UserRole.Farmer,
     });
     expect(result).not.toHaveProperty('password');
   });
@@ -74,7 +74,7 @@ describe('AuthService', () => {
       userId: 1,
       fullName: 'Crop User',
       email: 'person@example.com',
-      role: UserRole.User,
+      role: UserRole.Farmer,
       password: await hash('a-strong-password', 4),
     } as User;
     const builder = {

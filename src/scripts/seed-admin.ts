@@ -13,7 +13,10 @@ async function seedAdmin(): Promise<void> {
   const password = process.env.INITIAL_ADMIN_PASSWORD;
   if (
     !fullName ||
+    fullName.length < 2 ||
+    fullName.length > 100 ||
     !email ||
+    email.length > 100 ||
     !password ||
     password.length < 8 ||
     Buffer.byteLength(password, 'utf8') > 72

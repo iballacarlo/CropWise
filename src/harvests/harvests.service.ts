@@ -26,7 +26,7 @@ export class HarvestsService {
     const harvest = this.harvests.create({
       cropId: input.cropId,
       harvestDate: toDatabaseDate(input.harvestDate),
-      quantityHarvested: input.quantityHarvested.toFixed(3),
+      quantityHarvested: input.quantityHarvested.toFixed(2),
       unit: input.unit.trim(),
       notes: input.notes ?? null,
     });
@@ -61,7 +61,7 @@ export class HarvestsService {
       harvest.harvestDate = toDatabaseDate(input.harvestDate);
     }
     if (input.quantityHarvested !== undefined) {
-      harvest.quantityHarvested = input.quantityHarvested.toFixed(3);
+      harvest.quantityHarvested = input.quantityHarvested.toFixed(2);
     }
     if (input.unit !== undefined) harvest.unit = input.unit.trim();
     if (input.notes !== undefined) harvest.notes = input.notes;

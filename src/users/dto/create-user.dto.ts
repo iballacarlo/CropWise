@@ -12,12 +12,12 @@ import { UserRole } from '../entities/user-role.enum';
 export class CreateUserDto {
   @IsString()
   @MinLength(2)
-  @MaxLength(150)
+  @MaxLength(100)
   @Matches(/\S/)
   fullName!: string;
 
   @IsEmail()
-  @MaxLength(254)
+  @MaxLength(100)
   email!: string;
 
   @IsString()

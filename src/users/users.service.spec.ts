@@ -76,7 +76,7 @@ describe('UsersService', () => {
         fullName: 'Farm User',
         email: 'user@example.com',
         password: 'never-selected',
-        role: UserRole.User,
+        role: UserRole.Farmer,
       },
     ] as never);
 
@@ -85,7 +85,7 @@ describe('UsersService', () => {
         userId: 1,
         fullName: 'Farm User',
         email: 'user@example.com',
-        role: UserRole.User,
+        role: UserRole.Farmer,
       },
     ]);
   });
@@ -107,7 +107,7 @@ describe('UsersService', () => {
     } as never);
 
     await expect(
-      service.update(4, { role: UserRole.User }, 4),
+      service.update(4, { role: UserRole.Farmer }, 4),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(repository.save).not.toHaveBeenCalled();
   });

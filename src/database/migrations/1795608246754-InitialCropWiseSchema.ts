@@ -7,7 +7,6 @@ import {
 } from 'typeorm';
 import { CropStatus } from '../../crops/entities/crop-status.enum';
 import { InventoryTransactionType } from '../../inventory-transactions/entities/inventory-transaction-type.enum';
-import { UserRole } from '../../users/entities/user-role.enum';
 
 const generatedId = (name: string) => ({
   name,
@@ -56,8 +55,8 @@ export class InitialCropWiseSchema1795608246754 implements MigrationInterface {
           {
             name: 'Role',
             type: 'enum',
-            enum: Object.values(UserRole),
-            default: `'${UserRole.User}'`,
+            enum: ['Admin', 'User'],
+            default: "'User'",
           },
         ],
         indices: [

@@ -25,7 +25,7 @@ export class InventoryService {
       itemType: input.itemType.trim(),
       unit: input.unit.trim(),
       reorderLevel: formatQuantity(input.reorderLevel ?? 0),
-      quantity: '0.000',
+      quantity: '0.00',
     });
     return this.inventory.save(item);
   }
@@ -102,13 +102,13 @@ export class InventoryService {
 }
 
 function formatQuantity(quantity: number): string {
-  const match = /^(\d+)(?:\.(\d{1,3}))?$/.exec(String(quantity));
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(String(quantity));
   if (!match) {
     throw new BadRequestException(
-      'Quantity must have at most three decimal places.',
+      'Quantity must have at most two decimal places.',
     );
   }
-  return `${match[1]}.${(match[2] ?? '').padEnd(3, '0')}`;
+  return `${match[1]}.${(match[2] ?? '').padEnd(2, '0')}`;
 }
 
 function isForeignKeyConflict(error: unknown): boolean {

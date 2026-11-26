@@ -20,9 +20,9 @@ export class CreateInventoryTransactionDto {
   transactionType!: InventoryTransactionType;
 
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 3 })
-  @Min(0.001)
-  @Max(999999999.999)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(99999999.99)
   quantity!: number;
 
   @IsOptional()

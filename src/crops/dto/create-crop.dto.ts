@@ -18,7 +18,7 @@ export class CreateCropDto {
 
   @IsString()
   @MinLength(1)
-  @MaxLength(100)
+  @MaxLength(50)
   @Matches(/\S/)
   cropType!: string;
 

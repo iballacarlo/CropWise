@@ -17,14 +17,14 @@ export class UpdateHarvestDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 3 })
-  @Min(0.001)
-  @Max(999999999.999)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(99999999.99)
   quantityHarvested?: number;
 
   @IsOptional()
   @IsString()
-  @MaxLength(32)
+  @MaxLength(20)
   @Matches(/\S/)
   unit?: string;
 

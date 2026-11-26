@@ -24,7 +24,7 @@ describe('CropsService', () => {
     userId: 11,
     fullName: 'Crop User',
     email: 'user@example.com',
-    role: UserRole.User,
+    role: UserRole.Farmer,
   };
   const admin: AuthUser = { ...user, userId: 1, role: UserRole.Admin };
 

@@ -29,6 +29,7 @@ export function createDatabaseOptions(
     entities: [join(sourceDirectory, '**', '*.entity{.ts,.js}')],
     migrations: [join(databaseDirectory, 'migrations', '*{.ts,.js}')],
     migrationsTableName: 'typeorm_migrations',
+    migrationsTransactionMode: 'each',
     synchronize: false,
     migrationsRun: false,
   };

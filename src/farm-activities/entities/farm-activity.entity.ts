@@ -12,10 +12,10 @@ import type { Crop } from '../../crops/entities/crop.entity';
 @Entity({ name: 'farm_activities' })
 @Index('IDX_farm_activities_CropID', ['cropId'])
 export class FarmActivity {
-  @PrimaryGeneratedColumn({ name: 'ActivityID', type: 'int', unsigned: true })
+  @PrimaryGeneratedColumn({ name: 'ActivityID', type: 'int' })
   activityId!: number;
 
-  @Column({ name: 'ActivityName', type: 'varchar', length: 150 })
+  @Column({ name: 'ActivityName', type: 'varchar', length: 100 })
   activityName!: string;
 
   @Column({ name: 'ActivityDate', type: 'date' })
@@ -24,7 +24,7 @@ export class FarmActivity {
   @Column({ name: 'Notes', type: 'text', nullable: true })
   notes!: string | null;
 
-  @Column({ name: 'CropID', type: 'int', unsigned: true })
+  @Column({ name: 'CropID', type: 'int' })
   cropId!: number;
 
   @ManyToOne('Crop', 'farmActivities', {
