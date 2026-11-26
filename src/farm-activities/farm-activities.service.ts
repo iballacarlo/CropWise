@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { toDatabaseDate } from '../common/date-format';
+import type { DateRangeQueryDto } from '../common/dto/date-range-query.dto';
 import type { AuthUser } from '../auth/auth-user';
 import { CropsService } from '../crops/crops.service';
 import { UserRole } from '../users/entities/user-role.enum';
@@ -42,6 +43,38 @@ export class FarmActivitiesService {
       .orderBy('activity.activityId', 'ASC');
     if (actor.role !== UserRole.Admin) {
       query.where('crop.userId = :userId', { userId: actor.userId });
+    }
+    return query.getMany();
+  }
+
+  findSchedule(
+    range: DateRangeQueryDto,
+    actor: AuthUser,
+  ): Promise<FarmActivity[]> {
+    const fromDate = range.fromDate
+      ? toDatabaseDate(range.fromDate)
+      : undefined;
+    const toDate = range.toDate ? toDatabaseDate(range.toDate) : undefined;
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException(
+        'fromDate cannot be later than toDate.',
+      );
+    }
+
+    const query = this.activities
+      .createQueryBuilder('activity')
+      .innerJoin('activity.crop', 'crop')
+      .where('1 = 1')
+      .orderBy('activity.activityDate', 'ASC')
+      .addOrderBy('activity.activityId', 'ASC');
+    if (actor.role !== UserRole.Admin) {
+      query.andWhere('crop.userId = :userId', { userId: actor.userId });
+    }
+    if (fromDate) {
+      query.andWhere('activity.activityDate >= :fromDate', { fromDate });
+    }
+    if (toDate) {
+      query.andWhere('activity.activityDate <= :toDate', { toDate });
     }
     return query.getMany();
   }

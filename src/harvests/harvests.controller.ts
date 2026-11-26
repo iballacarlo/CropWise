@@ -7,12 +7,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthUser } from '../auth/auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { DateRangeQueryDto } from '../common/dto/date-range-query.dto';
 import { CreateHarvestDto } from './dto/create-harvest.dto';
 import { UpdateHarvestDto } from './dto/update-harvest.dto';
 import { HarvestsService } from './harvests.service';
@@ -37,6 +39,14 @@ export class HarvestsController {
   @Get()
   findAll(@Req() request: AuthenticatedRequest) {
     return this.harvests.findAll(request.user);
+  }
+
+  @Get('production-report')
+  productionReport(
+    @Query() range: DateRangeQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.harvests.productionReport(range, request.user);
   }
 
   @Get(':id')

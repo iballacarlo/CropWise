@@ -7,12 +7,14 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import type { AuthUser } from '../auth/auth-user';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { DateRangeQueryDto } from '../common/dto/date-range-query.dto';
 import { CreateFarmActivityDto } from './dto/create-farm-activity.dto';
 import { UpdateFarmActivityDto } from './dto/update-farm-activity.dto';
 import { FarmActivitiesService } from './farm-activities.service';
@@ -37,6 +39,14 @@ export class FarmActivitiesController {
   @Get()
   findAll(@Req() request: AuthenticatedRequest) {
     return this.activities.findAll(request.user);
+  }
+
+  @Get('schedule')
+  findSchedule(
+    @Query() range: DateRangeQueryDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.activities.findSchedule(range, request.user);
   }
 
   @Get(':id')

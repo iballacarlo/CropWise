@@ -238,6 +238,12 @@ const collection = {
         assertDate: { field: 'activityDate', value: '05/03/2026' },
       }),
       req('List activities', 'GET', '/farm-activities', 200),
+      req(
+        'Get activity schedule',
+        'GET',
+        '/farm-activities/schedule?fromDate=05%2F01%2F2026&toDate=05%2F31%2F2026',
+        200,
+      ),
       req('Get activity', 'GET', '/farm-activities/{{activityId}}', 200),
       req('Update activity', 'PATCH', '/farm-activities/{{activityId}}', 200, {
         body: { activityDate: '05/04/2026', notes: 'Postman update' },
@@ -261,6 +267,12 @@ const collection = {
       req('Update harvest', 'PATCH', '/harvests/{{harvestId}}', 200, {
         body: { harvestDate: '09/02/2026', quantityHarvested: 11 },
       }),
+      req(
+        'Get production report',
+        'GET',
+        '/harvests/production-report?fromDate=09%2F01%2F2026&toDate=09%2F30%2F2026',
+        200,
+      ),
       req('Delete harvest', 'DELETE', '/harvests/{{harvestId}}', 200),
     ]),
     folder('Inventory', 'userToken', [
@@ -424,8 +436,8 @@ const implementedRoutes = new Set(
       .replace(/\{\{[^}]+\}\}/g, ':id')}`,
   ),
 );
-if (implementedRoutes.size !== 34) {
-  throw new Error(`Expected 34 implemented endpoint routes; found ${implementedRoutes.size}.`);
+if (implementedRoutes.size !== 36) {
+  throw new Error(`Expected 36 implemented endpoint routes; found ${implementedRoutes.size}.`);
 }
 
 fs.mkdirSync(path.dirname(collectionPath), { recursive: true });

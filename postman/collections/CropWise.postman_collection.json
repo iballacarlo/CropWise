@@ -771,6 +771,26 @@
           ]
         },
         {
+          "name": "Get activity schedule",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/farm-activities/schedule?fromDate=05%2F01%2F2026&toDate=05%2F31%2F2026",
+            "description": "Expected HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Get activity",
           "request": {
             "method": "GET",
@@ -956,6 +976,26 @@
                 }
               }
             }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Returns HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get production report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/harvests/production-report?fromDate=09%2F01%2F2026&toDate=09%2F30%2F2026",
+            "description": "Expected HTTP 200."
           },
           "event": [
             {

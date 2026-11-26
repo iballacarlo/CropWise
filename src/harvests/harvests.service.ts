@@ -6,6 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { toDatabaseDate } from '../common/date-format';
+import type { DateRangeQueryDto } from '../common/dto/date-range-query.dto';
 import type { AuthUser } from '../auth/auth-user';
 import { CropsService } from '../crops/crops.service';
 import { UserRole } from '../users/entities/user-role.enum';
@@ -42,6 +43,55 @@ export class HarvestsService {
       query.where('crop.userId = :userId', { userId: actor.userId });
     }
     return query.getMany();
+  }
+
+  async productionReport(
+    range: DateRangeQueryDto,
+    actor: AuthUser,
+  ): Promise<ProductionReportRow[]> {
+    const fromDate = range.fromDate
+      ? toDatabaseDate(range.fromDate)
+      : undefined;
+    const toDate = range.toDate ? toDatabaseDate(range.toDate) : undefined;
+    if (fromDate && toDate && fromDate > toDate) {
+      throw new BadRequestException(
+        'fromDate cannot be later than toDate.',
+      );
+    }
+
+    const query = this.harvests
+      .createQueryBuilder('harvest')
+      .innerJoin('harvest.crop', 'crop')
+      .select('crop.cropId', 'cropId')
+      .addSelect('crop.cropName', 'cropName')
+      .addSelect('crop.cropType', 'cropType')
+      .addSelect('harvest.unit', 'unit')
+      .addSelect('COUNT(harvest.harvestId)', 'harvestCount')
+      .addSelect('SUM(harvest.quantityHarvested)', 'totalQuantity')
+      .where('1 = 1')
+      .groupBy('crop.cropId')
+      .addGroupBy('crop.cropName')
+      .addGroupBy('crop.cropType')
+      .addGroupBy('harvest.unit')
+      .orderBy('crop.cropName', 'ASC')
+      .addOrderBy('harvest.unit', 'ASC');
+    if (actor.role !== UserRole.Admin) {
+      query.andWhere('crop.userId = :userId', { userId: actor.userId });
+    }
+    if (fromDate) {
+      query.andWhere('harvest.harvestDate >= :fromDate', { fromDate });
+    }
+    if (toDate) {
+      query.andWhere('harvest.harvestDate <= :toDate', { toDate });
+    }
+
+    const rows = await query.getRawMany<ProductionReportRow>();
+    return rows.map((row) => ({
+      ...row,
+      cropId: Number(row.cropId),
+      harvestCount: Number(row.harvestCount),
+      totalQuantity: String(row.totalQuantity),
+    }));
   }
 
   findOne(harvestId: number, actor: AuthUser): Promise<Harvest> {
@@ -88,4 +138,13 @@ export class HarvestsService {
     if (!harvest) throw new NotFoundException('Harvest record not found.');
     return harvest;
   }
+}
+
+export interface ProductionReportRow {
+  cropId: number;
+  cropName: string;
+  cropType: string;
+  unit: string;
+  harvestCount: number;
+  totalQuantity: string;
 }
